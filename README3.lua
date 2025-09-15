@@ -1,63 +1,33 @@
 --[[
-UFO HUB X — ONE-FILE SUPER LOADER (Key→Splash→Main UI)
-ธีม: ดำ + เขียวเอเลียน | รวมทุกระบบที่คุยกันไว้ แบบไม่ตัดอะไรทิ้ง
-ทำงานได้บนตัวรัน (Delta X / KRNL / อื่น ๆ) และใน Studio ก็ได้
-]]--
+  UFO HUB X — Key System (Alien Style)
+  - ใช้เป็น "สคริปต์รัน" บนตัวรัน (Delta X / KRNL / CodeX / Arceus X Neo)
+  - ถ้าจะใช้แบบโหลดผ่าน URL ก็ได้: loadstring(game:HttpGet("..."))()
+  - ผ่านคีย์แล้ว จะเรียก hook OnUnlocked() -> นายเอาไปต่อ Splash / UI หลักได้เลย
 
------------------------- SERVICES ------------------------
-local Players        = game:GetService("Players")
-local TweenService   = game:GetService("TweenService")
-local UserInputService= game:GetService("UserInputService")
-local RunService     = game:GetService("RunService")
-local StarterGui     = game:GetService("StarterGui")
-local HttpService    = game:GetService("HttpService")
+  ✅ คีย์พิเศษ:
+     - "JJJMAX"              -> ผ่านทันที เฉพาะรอบนี้ (session)
+     - "PanuphongArtphairin" -> ผ่านถาวร (persist)
 
-local lp = Players.LocalPlayer
-local pg = lp:FindFirstChildOfClass("PlayerGui") or lp:WaitForChild("PlayerGui")
+  ✅ คีย์ปกติ (24 ชม.) -> ใส่จากรายการ whitelist (100 ตัวอย่าง)
 
------------------------- THEME ---------------------------
-local GREEN  = Color3.fromRGB(22,247,123)
-local BLACK  = Color3.fromRGB(18,20,24)
-local BG     = Color3.fromRGB(14,15,18)
-local SOFT   = Color3.fromRGB(30,32,36)
-local WHITE  = Color3.fromRGB(255,255,255)
-local RED    = Color3.fromRGB(235,70,85)
-local TXT    = Color3.fromRGB(235,240,245)
-local TXT2   = Color3.fromRGB(170,180,190)
-local LOGO   = "rbxassetid://106029438403666"
+  ✅ ที่อยู่ปุ่ม:
+     Get Key   -> https://linkunlocker.com/ufo-hub-x-wKfUt
+     Discord   -> https://discord.gg/JFHuVVVQ6D
+--]]
 
------------------------- FILE STORAGE (for executors) ----
-local haveFS = (writefile and readfile and isfile and makefolder) and true or false
-local STORE_DIR = "UFO_HUB_X"
-local STORE = STORE_DIR.."/store.json"
+-- ========== CONFIG ==========
+local TITLE_LEFT   = "KEY SYSTEM · เข้าสคริปต์ต้องมีคีย์ (อายุ 24 ชม.)"
+local BRAND        = "UFO HUB X"
+local LOGO_ID      = "rbxassetid://106029438403666" -- ไอคอนโลโก้
+local GETKEY_URL   = "https://linkunlocker.com/ufo-hub-x-wKfUt"
+local DISCORD_URL  = "https://discord.gg/JFHuVVVQ6D"
 
-local function ensureFolder()
-	if haveFS then pcall(function() if not isfolder(STORE_DIR) then makefolder(STORE_DIR) end end) end
-end
+-- คีย์พิเศษ
+local SPECIAL_ONCE = "JJJMAX"
+local SPECIAL_PERM = "PanuphongArtphairin"
 
-local function loadStore()
-	if haveFS and isfile(STORE) then
-		local ok, data = pcall(function() return HttpService:JSONDecode(readfile(STORE)) end)
-		if ok and typeof(data) == "table" then return data end
-	end
-	_G.__UFOX_STORE = _G.__UFOX_STORE or {}
-	return _G.__UFOX_STORE
-end
-
-local function saveStore(tab)
-	if haveFS then
-		ensureFolder()
-		pcall(function() writefile(STORE, HttpService:JSONEncode(tab)) end)
-	else
-		_G.__UFOX_STORE = tab
-	end
-end
-
-local STORE_DATA = loadStore()
-
------------------------- KEY DATABASE --------------------
--- 100 keys (ครบจากที่นายให้)
-local NORMAL_KEYS = {
+-- คีย์ปกติ 24 ชม. (ตัวอย่าง 100 ตัวตามที่นายให้)
+local WHITELIST_24H = {
 "UFOHUBXDMF9YK0XZM24h","UFOHUBX70OJIR4IF124h","UFOHUBX59XO3283ZB24h","UFOHUBX0G86MNVDJX24h",
 "UFOHUBX4Z80TW9L5H24h","UFOHUBX7RXW8H0JX224h","UFOHUBX66CXRW8Q6P24h","UFOHUBX8G8K2S2QO624h",
 "UFOHUBXWZQJX4BC1V24h","UFOHUBX9W6A1GZ0MZ24h","UFOHUBXK8B3O3NGOB24h","UFOHUBX8N3O2R3V8K24h",
@@ -83,301 +53,405 @@ local NORMAL_KEYS = {
 "UFOHUBX5B9N1M3V5C24h","UFOHUBX6N1M3V5C7X24h","UFOHUBX7M3V5C7X9Z24h","UFOHUBX8V5C7X9Z1B24h",
 "UFOHUBX9C7X9Z1B3N24h","UFOHUBX0X9Z1B3N5M24h","UFOHUBX1Z1B3N5M7V24h","UFOHUBX2B3N5M7V9C24h",
 "UFOHUBX3N5M7V9C1X24h","UFOHUBX4M7V9C1X3Z24h","UFOHUBX5V9C1X3Z5B24h","UFOHUBX6C1X3Z5B7N24h",
-"UFOHUBX7X3Z5B7N9M24h","UFOHUBX8Z5B7N9M1V24h","UFOHUBX9B7N9M1V3C24h","UFOHUBX1H049FTRA024h",
-"UFOHUBX7GB158W98N24h","UFOHUBXLQ7T871OFY24h","UFOHUBXZPPK52HC8G24h","UFOHUBXBO6IC0I7MM24h",
+"UFOHUBX7X3Z5B7N9M24h","UFOHUBX8Z5B7N9M1V24h","UFOHUBX9B7N9M1V3C24h","UFOHUBX0N9M1V3C5X24h",
+"UFOHUBX1M1V3C5X7Z24h","UFOHUBX2V3C5X7Z9B24h","UFOHUBX3C5X7Z9B1N24h","UFOHUBX4X7Z9B1N3M24h",
+"UFOHUBX5Z9B1N3M5V24h","UFOHUBX6B1N3M5V7C24h","UFOHUBX7N3M5V7C9X24h","UFOHUBX8M5V7C9X1Z24h",
+"UFOHUBX9V7C9X1Z3B24h","UFOHUBX1H049FTRA024h","UFOHUBX7GB158W98N24h","UFOHUBXLQ7T871OFY24h",
+"UFOHUBXZPPK52HC8G24h","UFOHUBXBO6IC0I7MM24h"
 }
 
--- ทำเป็น set สำหรับเช็คเร็ว
-local NORMAL_SET = {}
-for _,k in ipairs(NORMAL_KEYS) do NORMAL_SET[k] = true end
-
------------------------- HELPERS -------------------------
-local function stroke(obj, color, thick) local s=Instance.new("UIStroke",obj); s.Color=color; s.Thickness=thick or 2; return s end
-local function round(obj, r) local u=Instance.new("UICorner",obj); u.CornerRadius=UDim.new(0,r or 12); return u end
-local function center(frame) frame.AnchorPoint=Vector2.new(0.5,0.5); frame.Position=UDim2.fromScale(0.5,0.5) end
-
--- ลากแบบสมูท
-local function enableDrag(handle, target)
-	handle.Active = true; target.Active=true
-	local dragging=false; local dragStart; local startPos
-	handle.InputBegan:Connect(function(i)
-		if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
-			dragging=true; dragStart=i.Position; startPos=target.Position
-			i.Changed:Connect(function() if i.UserInputState==Enum.UserInputState.End then dragging=false end end)
-		end
-	end)
-	UserInputService.InputChanged:Connect(function(i)
-		if dragging and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-			local d=i.Position-dragStart
-			local goal=UDim2.new(startPos.X.Scale, startPos.X.Offset+d.X, startPos.Y.Scale, startPos.Y.Offset+d.Y)
-			TweenService:Create(target, TweenInfo.new(0.10, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position=goal}):Play()
-			STORE_DATA.lastPos = {goal.X.Scale,goal.X.Offset,goal.Y.Scale,goal.Y.Offset}
-			saveStore(STORE_DATA)
-		end
-	end)
+-- ลิงก์เปิดเบราว์เซอร์ (รองรับ executor ส่วนใหญ่)
+local function openURL(url)
+    local f = getsynasset or syn and syn.request or request or http_request
+    if (syn and syn.open_url) then syn.open_url(url)
+    elseif (f == request or f == http_request) and setclipboard then setclipboard(url)
+    elseif setclipboard then setclipboard(url)
+    end
 end
 
------------------------- KEY VALIDATION -------------------
-local function keyStatus()
-	if STORE_DATA.perm then return true,"PERM" end
-	if STORE_DATA.session then return true,"SESSION" end
-	if STORE_DATA.expire and os.time() < STORE_DATA.expire then return true,"24H" end
-	return false
+-- ========== PERSIST HELPERS ==========
+local function hasFS()
+    return (writefile and readfile and isfile) and true or false
 end
 
-local function applyKey(k)
-	if k=="PanuphongArtphairin" then
-		STORE_DATA.perm=true; STORE_DATA.session=nil; STORE_DATA.expire=nil; saveStore(STORE_DATA); return true,"PERM"
-	elseif k=="JJJMAX" then
-		STORE_DATA.session=true; STORE_DATA.perm=nil; STORE_DATA.expire=nil; saveStore(STORE_DATA); return true,"SESSION"
-	elseif NORMAL_SET[k] then
-		STORE_DATA.expire=os.time()+86400; STORE_DATA.perm=nil; STORE_DATA.session=nil; saveStore(STORE_DATA); return true,"24H"
-	end
-	return false
+local STORE_FILE = "UFO_HUB_X/key_store.json"
+
+local function readStore()
+    local data = { mode="", key="", expires=0 } -- mode: "perm"|"24h"|"once"|""
+    if hasFS() and isfile(STORE_FILE) then
+        local ok, j = pcall(function() return game:GetService("HttpService"):JSONDecode(readfile(STORE_FILE)) end)
+        if ok and type(j)=="table" then
+            for k,v in pairs(j) do data[k]=v end
+        end
+    end
+    return data
 end
 
------------------------- KEY UI --------------------------
-local function showKeyUI(onOK)
-	-- ถ้ามีสิทธิ์แล้ว ข้าม
-	local ok,typ = keyStatus()
-	if ok then onOK(typ) return end
-
-	local gui = Instance.new("ScreenGui", pg)
-	gui.Name="UFOX_KEY_UI"; gui.DisplayOrder=5000; gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
-
-	local dim = Instance.new("Frame", gui)
-	dim.BackgroundColor3 = Color3.new(0,0,0); dim.BackgroundTransparency=0.25; dim.Size=UDim2.fromScale(1,1)
-
-	local card = Instance.new("Frame", gui)
-	card.Size=UDim2.fromOffset(740, 420); center(card)
-	card.BackgroundColor3=BLACK; round(card,16); stroke(card, GREEN, 2)
-
-	-- Header
-	local head = Instance.new("Frame", card)
-	head.Size=UDim2.new(1,-24,0,62); head.Position=UDim2.fromOffset(12,10); head.BackgroundTransparency=1
-
-	local logo = Instance.new("ImageLabel", head)
-	logo.Image=LOGO; logo.BackgroundTransparency=1; logo.Size=UDim2.fromOffset(38,38); logo.Position=UDim2.fromOffset(0,12)
-
-	local keyTitle = Instance.new("TextLabel", head)
-	keyTitle.BackgroundTransparency=1
-	keyTitle.TextXAlignment=Enum.TextXAlignment.Left
-	keyTitle.Font=Enum.Font.GothamBold; keyTitle.TextSize=20; keyTitle.TextColor3=TXT
-	keyTitle.Text = "KEY SYSTEM · เข้าสคริปต์ต้องมีคีย์ (อายุ 24 ชม.)"
-	keyTitle.Position=UDim2.fromOffset(46,10); keyTitle.Size=UDim2.new(1,-120,1,-10)
-
-	local close = Instance.new("TextButton", head)
-	close.Text="✕"; close.BackgroundColor3=RED; close.TextColor3=WHITE; close.Font=Enum.Font.GothamBold; close.TextSize=22
-	close.Size=UDim2.fromOffset(42,42); close.Position=UDim2.new(1,-46,0,10); round(close,10)
-	close.AutoButtonColor=true
-	close.MouseButton1Click:Connect(function() gui:Destroy() end)
-
-	-- Title UFO HUB X (ใหญ่ กลาง)
-	local title = Instance.new("TextLabel", card)
-	title.RichText=true; title.BackgroundTransparency=1; title.TextScaled=false
-	title.Font=Enum.Font.GothamBlack; title.TextSize=32
-	title.Text = '<font color="#16F77B">UFO</font> <font color="#FFFFFF">HUB X</font>'
-	title.TextColor3 = WHITE; title.Size=UDim2.new(1,0,0,40)
-	title.AnchorPoint=Vector2.new(0.5,0); title.Position=UDim2.new(0.5,0,0,80)
-
-	-- Input
-	local input = Instance.new("TextBox", card)
-	input.Size=UDim2.new(1,-44,0,48); input.Position=UDim2.fromOffset(22,130)
-	input.BackgroundColor3=SOFT; input.TextColor3=TXT; input.PlaceholderColor3=TXT2; input.PlaceholderText="ใส่คีย์ที่นี่"
-	input.Font=Enum.Font.Gotham; input.TextSize=17; round(input,12); stroke(input, GREEN,2)
-
-	-- Submit
-	local submit = Instance.new("TextButton", card)
-	submit.Text="Submit Key  ➜"; submit.Font=Enum.Font.GothamBlack; submit.TextSize=20; submit.TextColor3=WHITE
-	submit.Size=UDim2.new(1,-44,0,54); submit.Position=UDim2.fromOffset(22,190)
-	submit.BackgroundColor3=SOFT; round(submit,12); stroke(submit, GREEN,2)
-
-	-- Bottom buttons row
-	local row = Instance.new("Frame", card)
-	row.BackgroundTransparency=1; row.Size=UDim2.new(1,-44,0,62); row.Position=UDim2.new(0,22,1,-82)
-
-	local getKey = Instance.new("TextButton", row)
-	getKey.Text="🔑 Get Key"; getKey.Font=Enum.Font.GothamSemibold; getKey.TextSize=18; getKey.TextColor3=WHITE
-	getKey.BackgroundColor3=SOFT; getKey.Size=UDim2.fromOffset(300,58); round(getKey,12); stroke(getKey,GREEN,2)
-
-	local discord = Instance.new("TextButton", row)
-	discord.Text="💬 Discord"; discord.Font=Enum.Font.GothamSemibold; discord.TextSize=18; discord.TextColor3=WHITE
-	discord.BackgroundColor3=SOFT; discord.Size=UDim2.fromOffset(300,58); round(discord,12); stroke(discord,GREEN,2)
-	discord.AnchorPoint=Vector2.new(1,0); discord.Position=UDim2.new(1,0,0,0)
-
-	-- open links via setclipboard (เข้ากับ executor ทุกเจ้า)
-	local KEY_LINK = "https://linkunlocker.com/ufo-hub-x-wKfUt"
-	local DISCORD  = "https://discord.gg/JFHuVVVQ6D"
-	local function toast(msg) pcall(function() StarterGui:SetCore("SendNotification",{Title="UFO HUB X",Text=msg,Duration=4}) end) end
-	getKey.MouseButton1Click:Connect(function()
-		if setclipboard then setclipboard(KEY_LINK); toast("คัดลอกลิงก์ Get Key แล้ว! วางในเบราว์เซอร์ได้เลย") end
-	end)
-	discord.MouseButton1Click:Connect(function()
-		if setclipboard then setclipboard(DISCORD); toast("คัดลอกลิงก์ Discord แล้ว!") end
-	end)
-
-	submit.MouseButton1Click:Connect(function()
-		local ok,typ = applyKey(input.Text)
-		if ok then
-			TweenService:Create(card, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size=UDim2.fromOffset(740,0)}):Play()
-			task.wait(0.15); gui:Destroy()
-			onOK(typ)
-		else
-			input.Text=""; input.PlaceholderText="❌ คีย์ไม่ถูกต้อง"; stroke(input,RED,2)
-			task.delay(0.4,function() for _,c in ipairs(input:GetChildren()) do if c:IsA("UIStroke") then c.Color=GREEN end end end)
-		end
-	end)
+local function writeStore(tbl)
+    if not hasFS() then return end
+    local ok, js = pcall(function() return game:GetService("HttpService"):JSONEncode(tbl) end)
+    if ok then pcall(function() writefile(STORE_FILE, js) end) end
 end
 
------------------------- SPLASH / LOADING ----------------
-local function showSplash(onDone)
-	local gui = Instance.new("ScreenGui", pg); gui.Name="UFOX_SPLASH"; gui.DisplayOrder=4000
-	local dim = Instance.new("Frame", gui); dim.Size=UDim2.fromScale(1,1); dim.BackgroundColor3=Color3.new(0,0,0)
-
-	local card = Instance.new("Frame", gui); card.Size=UDim2.fromOffset(540, 200); center(card)
-	card.BackgroundColor3=BLACK; round(card,18); stroke(card, GREEN,2)
-
-	local title = Instance.new("TextLabel", card)
-	title.RichText=true; title.BackgroundTransparency=1; title.Font=Enum.Font.GothamBlack; title.TextSize=24
-	title.Text = "🚀  Loading <font color=\"#16F77B\">UFO</font> <font color=\"#FFFFFF\">HUB X</font>"
-	title.TextColor3=WHITE; title.Size=UDim2.new(1,0,0,34); title.Position=UDim2.fromOffset(0,24)
-
-	-- Bar
-	local bar = Instance.new("Frame", card); bar.Size=UDim2.new(1,-80,0,20); bar.Position=UDim2.fromOffset(40,90)
-	bar.BackgroundColor3=SOFT; round(bar,10); stroke(bar,WHITE,2)
-	local fill = Instance.new("Frame", bar); fill.Size=UDim2.new(0,0,1,0); fill.BackgroundColor3=GREEN; round(fill,10)
-
-	-- Rocket
-	local rocket = Instance.new("TextLabel", card)
-	rocket.BackgroundTransparency=1; rocket.Text="🚀"; rocket.Font=Enum.Font.GothamBlack; rocket.TextSize=28
-	rocket.Position=UDim2.fromOffset(38,82)
-
-	-- Percent
-	local percent = Instance.new("TextLabel", card)
-	percent.BackgroundTransparency=1; percent.Text="0%"; percent.Font=Enum.Font.GothamBold; percent.TextSize=22
-	percent.TextColor3=WHITE; percent.Position=UDim2.fromOffset(0,130); percent.Size=UDim2.new(1,0,0,28)
-
-	-- Animate 4.5s
-	local steps = 100; local dur=4.5
-	for i=0,steps do
-		local a = i/steps
-		fill.Size = UDim2.new(a,0,1,0)
-		local px = bar.AbsolutePosition.X + bar.AbsoluteSize.X * a
-		rocket.Position = UDim2.fromOffset((px - card.AbsolutePosition.X) - 8, 82)
-		percent.Text = tostring(math.floor(a*100)).."%"
-		task.wait(dur/steps)
-	end
-	task.wait(0.15)
-	gui:Destroy()
-	if onDone then onDone() end
+-- ========== VALIDATION ==========
+local function inList(k)
+    for i=1,#WHITELIST_24H do
+        if WHITELIST_24H[i]==k then return true end
+    end
+    return false
 end
 
------------------------- MAIN UI -------------------------
-local singleton = nil
-local toggleBtn = nil
-
-local function buildMainUI()
-	if singleton and singleton.Parent then return singleton end
-
-	local gui = Instance.new("ScreenGui", pg); gui.Name="UFOX_MAIN"; gui.DisplayOrder=3000
-	singleton = gui
-
-	-- Toggle (ปุ่มลอย เล็กลง, ลากได้)
-	toggleBtn = Instance.new("ImageButton", gui)
-	toggleBtn.Image = LOGO; toggleBtn.BackgroundColor3=SOFT; round(toggleBtn,14); stroke(toggleBtn,WHITE,2)
-	toggleBtn.Size=UDim2.fromOffset(84,84); toggleBtn.Position=UDim2.new(0,24,0.5,-42); toggleBtn.AutoButtonColor=true
-	enableDrag(toggleBtn, toggleBtn)
-
-	-- Window
-	local win = Instance.new("Frame", gui)
-	win.Size=UDim2.fromOffset(820, 440)
-	if STORE_DATA.lastPos then
-		win.Position = UDim2.new(STORE_DATA.lastPos[1], STORE_DATA.lastPos[2], STORE_DATA.lastPos[3], STORE_DATA.lastPos[4])
-	else center(win) end
-	win.BackgroundColor3=BG; round(win,16); stroke(win, WHITE,2)
-
-	-- Header
-	local head = Instance.new("Frame", win); head.Size=UDim2.new(1,0,0,56); head.BackgroundColor3=BLACK; round(head,16)
-	local logo = Instance.new("ImageLabel", head); logo.Image=LOGO; logo.Size=UDim2.fromOffset(32,32); logo.Position=UDim2.fromOffset(14,12); logo.BackgroundTransparency=1
-	local title = Instance.new("TextLabel", head)
-	title.RichText=true; title.BackgroundTransparency=1; title.Font=Enum.Font.GothamBlack; title.TextSize=22; title.TextXAlignment=Enum.TextXAlignment.Left
-	title.Text = '<font color="#16F77B">UFO</font> <font color="#FFFFFF">HUB X</font>'
-	title.TextColor3=WHITE; title.Position=UDim2.fromOffset(54,14); title.Size=UDim2.new(1,-140,1,-14)
-
-	local close = Instance.new("TextButton", head)
-	close.Text="✕"; close.BackgroundColor3=RED; close.TextColor3=WHITE; close.Font=Enum.Font.GothamBold; close.TextSize=20
-	close.Size=UDim2.fromOffset(40,40); close.Position=UDim2.new(1,-50,0.5,-20); round(close,10)
-
-	enableDrag(head, win)
-
-	-- Tabs
-	local tabs = Instance.new("Frame", win); tabs.BackgroundTransparency=1; tabs.Position=UDim2.fromOffset(14,64); tabs.Size=UDim2.new(1,-28,0,44)
-	local list = Instance.new("UIListLayout", tabs); list.FillDirection=Enum.FillDirection.Horizontal; list.Padding=UDim.new(0,8)
-	local tabNames = {"หน้าหลัก","ผู้เล่น","ภาพ/แสง","เทเลพอร์ต","ตั้งค่า","เครดิต"}
-	local pages = {}
-
-	local content = Instance.new("Frame", win); content.Position=UDim2.fromOffset(14,114); content.Size=UDim2.new(1,-28,1,-128)
-	content.BackgroundColor3=SOFT; round(content,12); stroke(content,WHITE,2)
-
-	-- สองซีก
-	local left = Instance.new("Frame", content); left.BackgroundColor3=BG; stroke(left,WHITE,1); round(left,10)
-	left.Size=UDim2.new(0.48,0,1,-16); left.Position=UDim2.fromOffset(8,8)
-	local right = Instance.new("Frame", content); right.BackgroundColor3=BG; stroke(right,WHITE,1); round(right,10)
-	right.Size=UDim2.new(0.48,0,1,-16); right.Position=UDim2.new(1,-right.Size.X.Offset-8,0,8); right.AnchorPoint=Vector2.new(1,0)
-
-	-- สร้างแท็บ
-	local current
-	local function switchTo(name)
-		if current==name then return end
-		current=name
-		-- (พื้นที่สำหรับใส่ฟังก์ชันจริงภายหลัง) ตอนนี้โชว์หัวข้อเพียว ๆ
-		for _,c in ipairs(left:GetChildren()) do if c:IsA("GuiObject") then c:Destroy() end end
-		for _,c in ipairs(right:GetChildren()) do if c:IsA("GuiObject") then c:Destroy() end end
-
-		local lblL = Instance.new("TextLabel", left); lblL.BackgroundTransparency=1; lblL.TextColor3=GREEN; lblL.Font=Enum.Font.GothamBold; lblL.TextSize=16
-		lblL.Position=UDim2.fromOffset(12,10); lblL.Text = "• "..name.." (ซ้าย)"
-
-		local lblR = Instance.new("TextLabel", right); lblR.BackgroundTransparency=1; lblR.TextColor3=GREEN; lblR.Font=Enum.Font.GothamBold; lblR.TextSize=16
-		lblR.Position=UDim2.fromOffset(12,10); lblR.Text = "• "..name.." (ขวา)"
-	end
-
-	local function makeTab(name)
-		local b=Instance.new("TextButton", tabs); b.Text=name; b.TextSize=16; b.Font=Enum.Font.GothamSemibold; b.TextColor3=TXT
-		b.BackgroundColor3=SOFT; b.Size=UDim2.fromOffset(122,44); round(b,10); stroke(b,WHITE,1)
-		b.MouseButton1Click:Connect(function()
-			for _,bb in ipairs(tabs:GetChildren()) do if bb:IsA("TextButton") then bb.TextColor3=TXT end end
-			b.TextColor3=GREEN; switchTo(name)
-		end)
-	end
-
-	for _,n in ipairs(tabNames) do makeTab(n) end
-	switchTo("หน้าหลัก")
-
-	-- show/hide smooth
-	local function showWin()
-		win.Visible=true
-		TweenService:Create(win, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency=0}):Play()
-	end
-	local function hideWin()
-		TweenService:Create(win, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency=0.1}):Play()
-		task.wait(0.16); win.Visible=false
-	end
-	toggleBtn.MouseButton1Click:Connect(function()
-		if win.Visible then hideWin() else showWin() end
-	end)
-	close.MouseButton1Click:Connect(function() hideWin() end)
-
-	return gui
+local function now()
+    return os.time()
 end
 
------------------------- BOOT FLOW -----------------------
-local function start()
-	showKeyUI(function(kind)
-		showSplash(function()
-			buildMainUI()
-			pcall(function() StarterGui:SetCore("SendNotification",{Title="UFO HUB X",Text="พร้อมใช้งาน ("..kind..")",Duration=4}) end)
-		end)
-	end)
+local function validateKey(k)
+    if not k or k=="" then return false,"กรุณาใส่คีย์" end
+    if k==SPECIAL_PERM then
+        return true,"perm"
+    elseif k==SPECIAL_ONCE then
+        return true,"once"
+    elseif inList(k) then
+        return true,"24h"
+    else
+        return false,"คีย์ไม่ถูกต้อง"
+    end
 end
 
-start()
+-- ========== UI BUILD ==========
+local Players = game:GetService("Players")
+local lp      = Players.LocalPlayer
+local pg      = lp:WaitForChild("PlayerGui")
+
+-- กันซ้ำ
+local old = pg:FindFirstChild("UFOX_KEY_UI")
+if old then old:Destroy() end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "UFOX_KEY_UI"
+gui.IgnoreGuiInset = true
+gui.DisplayOrder = 9999
+gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = pg
+
+local color = {
+    bg     = Color3.fromRGB(17,18,20),
+    card   = Color3.fromRGB(27,29,33),
+    panel  = Color3.fromRGB(33,36,41),
+    text   = Color3.fromRGB(232,235,238),
+    sub    = Color3.fromRGB(178,186,194),
+    green  = Color3.fromRGB(22,247,123),
+    greenD = Color3.fromRGB(21,211,110),
+    red    = Color3.fromRGB(235,70,85),
+    stroke = Color3.fromRGB(120, 255, 180)
+}
+
+local function stroke(target, c, t)
+    local s = Instance.new("UIStroke")
+    s.Color = c or color.green
+    s.Thickness = t or 2
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    s.Parent = target
+    return s
+end
+
+local function corner(target, r)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, r or 12)
+    c.Parent = target
+    return c
+end
+
+local root = Instance.new("Frame")
+root.Size = UDim2.fromOffset(640, 360)
+root.Position = UDim2.new(0.5,-320,0.5,-180)
+root.BackgroundColor3 = color.card
+root.BorderSizePixel = 0
+root.Parent = gui
+corner(root, 14)
+stroke(root, color.green, 2)
+
+-- เงา
+local shadow = Instance.new("ImageLabel")
+shadow.Name = "Shadow"
+shadow.BackgroundTransparency = 1
+shadow.Image = "rbxassetid://5028857084"
+shadow.ImageColor3 = Color3.new(0,0,0)
+shadow.ImageTransparency = 0.3
+shadow.ScaleType = Enum.ScaleType.Slice
+shadow.SliceCenter = Rect.new(24,24,276,276)
+shadow.Size = UDim2.new(1, 60, 1, 60)
+shadow.Position = UDim2.fromOffset(-30,-30)
+shadow.Parent = root
+shadow.ZIndex = 0
+
+-- หัวการ์ด
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1,0,0,64)
+header.BackgroundColor3 = color.panel
+header.BorderSizePixel = 0
+header.Parent = root
+corner(header, 12)
+
+local hpad = Instance.new("UIPadding", header)
+hpad.PaddingLeft = UDim.new(0,16)
+hpad.PaddingRight= UDim.new(0,16)
+
+-- โลโก้
+local logo = Instance.new("ImageLabel")
+logo.BackgroundTransparency = 1
+logo.Image = LOGO_ID
+logo.Size = UDim2.fromOffset(32,32)
+logo.Position = UDim2.new(0,8,0.5,-16)
+logo.Parent = header
+
+-- ข้อความซ้าย (บรรทัดหัว)
+local hText = Instance.new("TextLabel")
+hText.BackgroundTransparency = 1
+hText.AnchorPoint = Vector2.new(0,0.5)
+hText.Position = UDim2.new(0,48,0.5,0)
+hText.Size = UDim2.new(1,-120,1,-0)
+hText.TextXAlignment = Enum.TextXAlignment.Left
+hText.Font = Enum.Font.GothamMedium
+hText.TextSize = 16
+hText.TextColor3 = color.text
+hText.Text = TITLE_LEFT
+hText.Parent = header
+
+-- ปุ่มปิด (กากบาท)
+local closeBtn = Instance.new("TextButton")
+closeBtn.AnchorPoint = Vector2.new(1,0.5)
+closeBtn.Position = UDim2.new(1, -10, 0.5, 0)
+closeBtn.Size = UDim2.fromOffset(36,36)
+closeBtn.BackgroundColor3 = color.red
+closeBtn.Text = "✕"
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 18
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.AutoButtonColor = true
+closeBtn.Parent = header
+corner(closeBtn, 10)
+stroke(closeBtn, Color3.fromRGB(177,42,58), 2)
+
+-- ชื่อกลางใหญ่ UFO HUB X
+local title = Instance.new("TextLabel")
+title.BackgroundTransparency = 1
+title.Position = UDim2.new(0.5,0,0,76)
+title.AnchorPoint = Vector2.new(0.5,0)
+title.Size = UDim2.fromOffset(560,36)
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 30
+title.TextXAlignment = Enum.TextXAlignment.Center
+title.TextYAlignment = Enum.TextYAlignment.Center
+title.Text = "UFO  HUB X"
+title.TextColor3 = color.text
+title.Parent = root
+
+-- เน้นคำ UFO เป็นเขียว (ด้วย RichText)
+title.RichText = true
+title.Text = '<font color="#16F77B">UFO</font> HUB X'
+
+-- กล่องฟอร์ม
+local form = Instance.new("Frame")
+form.Size = UDim2.new(1,-32,0,160)
+form.Position = UDim2.new(0,16,0,120)
+form.BackgroundTransparency = 1
+form.Parent = root
+
+local list = Instance.new("UIListLayout", form)
+list.Padding = UDim.new(0,12)
+
+-- TextBox ใส่คีย์
+local box = Instance.new("TextBox")
+box.Size = UDim2.new(1,0,0,44)
+box.BackgroundColor3 = Color3.fromRGB(34,38,44)
+box.TextColor3 = color.text
+box.PlaceholderText = "insert your key here"
+box.PlaceholderColor3 = color.sub
+box.Font = Enum.Font.Gotham
+box.TextSize = 16
+box.ClearTextOnFocus = false
+box.Parent = form
+corner(box, 10)
+stroke(box, color.green, 2)
+
+-- ปุ่ม Submit
+local submit = Instance.new("TextButton")
+submit.Size = UDim2.new(1,0,0,48)
+submit.BackgroundColor3 = color.green
+submit.Font = Enum.Font.GothamBold
+submit.TextSize = 18
+submit.Text = "Submit Key  ➜"
+submit.TextColor3 = Color3.fromRGB(15,16,18)
+submit.Parent = form
+corner(submit, 10)
+stroke(submit, color.greenD, 2)
+
+-- เส้นแบ่ง
+local divider = Instance.new("Frame")
+divider.Size = UDim2.new(1,-32,0,1)
+divider.Position = UDim2.new(0,16,1,-64)
+divider.BackgroundColor3 = Color3.fromRGB(60,66,72)
+divider.BorderSizePixel = 0
+divider.Parent = root
+
+-- ปุ่มล่าง 2 อัน
+local bottom = Instance.new("Frame")
+bottom.Size = UDim2.new(1,-32,0,56)
+bottom.Position = UDim2.new(0,16,1,-56)
+bottom.BackgroundTransparency = 1
+bottom.Parent = root
+
+local bList = Instance.new("UIListLayout", bottom)
+bList.FillDirection = Enum.FillDirection.Horizontal
+bList.Padding = UDim.new(0,14)
+bList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local function mkAction(text, icon)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0.5,-7,1,0)
+    b.BackgroundColor3 = Color3.fromRGB(30,34,40)
+    b.Font = Enum.Font.GothamMedium
+    b.TextSize = 18
+    b.TextColor3 = color.text
+    b.Text = (icon or "").."  "..text
+    b.AutoButtonColor = true
+    corner(b, 12)
+    stroke(b, color.green, 2)
+    return b
+end
+
+local btnGet = mkAction("Get Key", "🔑")
+btnGet.Parent = bottom
+local btnDiscord = mkAction("Discord", "💬")
+btnDiscord.Parent = bottom
+
+-- Hover เอฟเฟกต์เบา ๆ
+local TweenService = game:GetService("TweenService")
+local function hoverify(btn)
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            BackgroundColor3 = Color3.fromRGB(36,40,48)
+        }):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            BackgroundColor3 = Color3.fromRGB(30,34,40)
+        }):Play()
+    end)
+end
+hoverify(btnGet); hoverify(btnDiscord)
+
+-- ปุ่มลัดเปิดลิงก์
+btnGet.MouseButton1Click:Connect(function() openURL(GETKEY_URL) end)
+btnDiscord.MouseButton1Click:Connect(function() openURL(DISCORD_URL) end)
+
+-- ปิด UI (ถ้าอยากหายถาวรก็ Destroy)
+closeBtn.MouseButton1Click:Connect(function()
+    gui.Enabled = false
+end)
+
+-- ========== DRAG ลื่น & กันเด้ง ==========
+local UIS = game:GetService("UserInputService")
+do
+    local dragging, startPos, dragStart
+    header.InputBegan:Connect(function(i)
+        if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+            dragging = true; dragStart = i.Position; startPos = root.Position
+            i.Changed:Connect(function()
+                if i.UserInputState==Enum.UserInputState.End then dragging=false end
+            end)
+        end
+    end)
+    UIS.InputChanged:Connect(function(i)
+        if dragging and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+            local delta = i.Position - dragStart
+            root.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset+delta.X, startPos.Y.Scale, startPos.Y.Offset+delta.Y)
+        end
+    end)
+end
+
+-- ========== LOGIC: โหลดค่าที่เซฟไว้ ==========
+local store = readStore()
+local unlocked = false
+
+local function markUnlocked(m)
+    unlocked = true
+    -- เซฟสถานะ/เวลาหมดอายุ
+    if m=="perm" then
+        writeStore({mode="perm", key=SPECIAL_PERM, expires=0})
+    elseif m=="24h" then
+        writeStore({mode="24h", key=box.Text,  expires= now()+24*60*60})
+    elseif m=="once" then
+        -- session only: ไม่เขียนไฟล์
+    end
+
+    -- ปิด UI key และเรียก hook ต่อ
+    TweenService:Create(root, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+        BackgroundTransparency = 1
+    }):Play()
+    task.delay(0.18, function()
+        gui:Destroy()
+        -- ========= จุดเชื่อมต่อ UI หลัก =========
+        -- ใส่โค้ด Splash/เมนูหลักของนายตรงนี้ได้เลย
+        -- ตัวอย่าง:
+        -- loadstring(game:HttpGet("https://raw.githubusercontent.com/UFO-HUB-X-Studio/UFO-HUB-X-2/refs/heads/main/README2.lua"))()
+        -- หลังจากนั้นค่อยโหลด UI หลัก:
+        -- loadstring(game:HttpGet("https://raw.githubusercontent.com/UFO-HUB-X-Studio/UFO-HUB-X-3/refs/heads/main/README3.lua"))()
+    end)
+end
+
+-- ถ้ามี perm หรือยังไม่หมดอายุ -> ผ่านอัตโนมัติ
+if store.mode=="perm" then
+    markUnlocked("perm")
+elseif store.mode=="24h" and type(store.expires)=="number" and store.expires>now() then
+    markUnlocked("24h")
+end
+
+-- ========== ปุ่ม Submit ==========
+local submitting = false
+local function toast(msg, ok)
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "UFO HUB X",
+            Text  = msg,
+            Duration = 3,
+            Button1 = ok and "OK" or nil
+        })
+    end)
+end
+
+submit.MouseButton1Click:Connect(function()
+    if submitting or unlocked then return end
+    submitting = true
+    local k = (box.Text or ""):gsub("^%s+",""):gsub("%s+$","")
+
+    local ok, modeOrMsg = validateKey(k)
+    if not ok then
+        toast(modeOrMsg or "คีย์ไม่ถูกต้อง")
+        submitting = false
+        return
+    end
+
+    if modeOrMsg=="perm" then
+        toast("ยืนยันคีย์ถาวรสำเร็จ ✔")
+        markUnlocked("perm")
+
+    elseif modeOrMsg=="once" then
+        toast("คีย์รอบนี้สำเร็จ ✔ (เฉพาะครั้งนี้)")
+        markUnlocked("once")
+
+    elseif modeOrMsg=="24h" then
+        toast("คีย์ 24 ชม. เปิดใช้งานแล้ว ✔")
+        markUnlocked("24h")
+    end
+end)
+
+-- ========== เปิดด้วยแอนิเมชันเล็ก ๆ ==========
+root.BackgroundTransparency = 1
+root.Position = UDim2.new(0.5,-320,0.5,-160)
+TweenService:Create(root, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+    BackgroundTransparency = 0,
+    Position = UDim2.new(0.5,-320,0.5,-180)
+}):Play()
