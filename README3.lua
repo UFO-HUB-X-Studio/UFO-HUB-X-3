@@ -117,3 +117,189 @@ local function showKeyUI(onOK)
 end
 
 _G.__UFOX_FULL_API = {showKeyUI=showKeyUI,smoothDrag=smoothDrag,theme={GREEN=GREEN,WHITE=WHITE,LOGO_ID=LOGO_ID,TXT=TXT}}
+-- UFO HUB X • Part 2/3
+-- Splash / Download UI
+local TweenService = game:GetService("TweenService")
+local pg = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+
+local GREEN = _G.__UFOX_FULL_API.theme.GREEN
+local WHITE = _G.__UFOX_FULL_API.theme.WHITE
+local LOGO_ID = _G.__UFOX_FULL_API.theme.LOGO_ID
+
+local function showSplash(onDone)
+	local gui=Instance.new("ScreenGui",pg); gui.Name="UFOX_SPLASH"; gui.DisplayOrder=2500
+	local bg=Instance.new("Frame",gui); bg.Size=UDim2.fromScale(1,1); bg.BackgroundColor3=Color3.new(0,0,0)
+
+	local card=Instance.new("Frame",bg); card.Size=UDim2.fromOffset(560,300)
+	card.AnchorPoint=Vector2.new(0.5,0.5); card.Position=UDim2.fromScale(0.5,0.5); card.BackgroundColor3=Color3.fromRGB(18,20,24)
+	Instance.new("UICorner",card).CornerRadius=UDim.new(0,16)
+	local stroke=Instance.new("UIStroke",card); stroke.Color=GREEN; stroke.Thickness=2
+
+	local logo=Instance.new("ImageLabel",card); logo.Image=LOGO_ID; logo.Size=UDim2.fromOffset(96,96)
+	logo.AnchorPoint=Vector2.new(0.5,0); logo.Position=UDim2.new(0.5,0,0,14); logo.BackgroundTransparency=1
+
+	local title=Instance.new("TextLabel",card); title.BackgroundTransparency=1
+	title.Text='<font color="#16F77B">UFO</font> <font color="#FFFFFF">HUB X</font>'
+	title.RichText=true; title.Size=UDim2.new(1,0,0,40); title.Position=UDim2.new(0.5,0,0,120); title.AnchorPoint=Vector2.new(0.5,0)
+	title.Font=Enum.Font.GothamBold; title.TextSize=28; title.TextColor3=WHITE
+
+	local barBG=Instance.new("Frame",card); barBG.Size=UDim2.new(1,-80,0,30)
+	barBG.AnchorPoint=Vector2.new(0.5,0); barBG.Position=UDim2.new(0.5,0,0,180)
+	barBG.BackgroundColor3=Color3.fromRGB(50,50,50); Instance.new("UICorner",barBG).CornerRadius=UDim.new(0,12)
+	local barStroke=Instance.new("UIStroke",barBG); barStroke.Color=WHITE; barStroke.Thickness=2
+
+	local barFill=Instance.new("Frame",barBG); barFill.BackgroundColor3=GREEN; barFill.Size=UDim2.new(0,0,1,0)
+	Instance.new("UICorner",barFill).CornerRadius=UDim.new(0,12)
+
+	local rocket=Instance.new("TextLabel",barBG); rocket.Text="🚀"; rocket.TextSize=22; rocket.BackgroundTransparency=1
+	rocket.AnchorPoint=Vector2.new(0.5,0.5); rocket.Size=UDim2.fromOffset(28,28)
+
+	local percent=Instance.new("TextLabel",card); percent.Text="0%"; percent.Size=UDim2.new(1,0,0,40)
+	percent.Position=UDim2.new(0.5,0,0,230); percent.AnchorPoint=Vector2.new(0.5,0)
+	percent.Font=Enum.Font.GothamBold; percent.TextSize=30; percent.TextColor3=WHITE; percent.BackgroundTransparency=1
+
+	-- Animate
+	card.Size=UDim2.fromOffset(520,280)
+	TweenService:Create(card,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Size=UDim2.fromOffset(560,300)}):Play()
+
+	local TOTAL_TIME=10
+	local start=tick()
+	while true do
+		local t=math.clamp((tick()-start)/TOTAL_TIME,0,1)
+		local eased=1-(1-t)^3
+		barFill.Size=UDim2.new(eased,0,1,0)
+		local px=(eased*barBG.AbsoluteSize.X)-barBG.AbsoluteSize.X/2+10
+		rocket.Position=UDim2.new(0.5,px,0.5,0)
+		percent.Text=("%d%%"):format(math.floor(eased*100))
+		if t>=1 then break end
+		task.wait()
+	end
+
+	-- Fade out
+	TweenService:Create(card,TweenInfo.new(0.45),{BackgroundTransparency=1}):Play()
+	TweenService:Create(bg,TweenInfo.new(0.45),{BackgroundTransparency=1}):Play()
+	task.wait(0.5); gui:Destroy()
+	if onDone then onDone() end
+end
+
+_G.__UFOX_FULL_API.showSplash=showSplash
+-- UFO HUB X • Part 3/3
+-- Main UI + Flow
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
+local lp = Players.LocalPlayer
+local pg = lp:WaitForChild("PlayerGui")
+
+local GREEN = _G.__UFOX_FULL_API.theme.GREEN
+local WHITE = _G.__UFOX_FULL_API.theme.WHITE
+local TXT   = _G.__UFOX_FULL_API.theme.TXT
+local LOGO_ID = _G.__UFOX_FULL_API.theme.LOGO_ID
+local smoothDrag = _G.__UFOX_FULL_API.smoothDrag
+
+-- Main UI
+local function showMainUI()
+	local gui = Instance.new("ScreenGui", pg)
+	gui.Name = "UFOX_MAIN"
+	gui.DisplayOrder = 1500
+
+	-- Floating Toggle
+	local toggle = Instance.new("TextButton", gui)
+	toggle.Text = "เมนู"
+	toggle.Size = UDim2.fromOffset(80,80)
+	toggle.Position = UDim2.new(0,30,0.5,-40)
+	toggle.BackgroundColor3 = Color3.fromRGB(20,20,20)
+	toggle.TextColor3 = GREEN
+	toggle.Font = Enum.Font.GothamBold
+	toggle.TextSize = 18
+	Instance.new("UICorner",toggle).CornerRadius=UDim.new(0,12)
+	local tgStroke=Instance.new("UIStroke",toggle); tgStroke.Color=GREEN; tgStroke.Thickness=2
+	smoothDrag(toggle,toggle)
+
+	-- Main Window
+	local main = Instance.new("Frame", gui)
+	main.Size = UDim2.fromOffset(620,400)
+	main.AnchorPoint = Vector2.new(0.5,0.5)
+	main.Position = UDim2.fromScale(0.5,0.5)
+	main.BackgroundColor3 = Color3.fromRGB(18,20,24)
+	Instance.new("UICorner",main).CornerRadius=UDim.new(0,14)
+	local mainStroke=Instance.new("UIStroke",main); mainStroke.Color=GREEN; mainStroke.Thickness=2
+
+	-- TitleBar
+	local bar = Instance.new("Frame", main)
+	bar.Size = UDim2.new(1,0,0,44)
+	bar.BackgroundColor3 = Color3.fromRGB(26,28,32)
+	Instance.new("UICorner",bar).CornerRadius=UDim.new(0,12)
+	local logo=Instance.new("ImageLabel",bar); logo.Image=LOGO_ID; logo.Size=UDim2.fromOffset(28,28); logo.Position=UDim2.fromOffset(8,8); logo.BackgroundTransparency=1
+	local title=Instance.new("TextLabel",bar); title.Text="<font color='#16F77B'>UFO</font> <font color='#FFFFFF'>HUB X</font>"; title.RichText=true
+	title.Size=UDim2.new(1,-80,1,0); title.Position=UDim2.fromOffset(44,0); title.BackgroundTransparency=1; title.TextColor3=TXT
+	title.Font=Enum.Font.GothamBold; title.TextSize=20; title.TextXAlignment=Enum.TextXAlignment.Left
+
+	-- Close X
+	local close=Instance.new("TextButton",bar); close.Text="✕"; close.Size=UDim2.fromOffset(32,32)
+	close.Position=UDim2.new(1,-40,0.5,-16); close.BackgroundColor3=Color3.fromRGB(36,40,46)
+	close.Font=Enum.Font.GothamBold; close.TextSize=18; close.TextColor3=TXT
+	Instance.new("UICorner",close).CornerRadius=UDim.new(0,8); local cs=Instance.new("UIStroke",close); cs.Color=GREEN; cs.Thickness=2
+	close.MouseEnter:Connect(function() close.BackgroundColor3=Color3.fromRGB(235,70,85); close.TextColor3=WHITE end)
+	close.MouseLeave:Connect(function() close.BackgroundColor3=Color3.fromRGB(36,40,46); close.TextColor3=TXT end)
+	close.MouseButton1Click:Connect(function() main.Visible=false end)
+
+	-- Tabs
+	local tabs = Instance.new("Frame",main); tabs.Size=UDim2.new(1,-16,0,34); tabs.Position=UDim2.fromOffset(8,54)
+	tabs.BackgroundColor3=Color3.fromRGB(26,28,32); Instance.new("UICorner",tabs).CornerRadius=UDim.new(0,8)
+	local tl=Instance.new("UIListLayout",tabs); tl.FillDirection=Enum.FillDirection.Horizontal; tl.Padding=UDim.new(0,6)
+
+	local content = Instance.new("Frame",main); content.Size=UDim2.new(1,-16,1,-100); content.Position=UDim2.fromOffset(8,96)
+	content.BackgroundColor3=Color3.fromRGB(26,28,32); Instance.new("UICorner",content).CornerRadius=UDim.new(0,8)
+	local pages={}; local current
+
+	local function mkTab(name)
+		local b=Instance.new("TextButton",tabs); b.Text=name; b.Size=UDim2.fromOffset(90,34); b.BackgroundColor3=Color3.fromRGB(20,20,20)
+		b.Font=Enum.Font.Gotham; b.TextSize=15; b.TextColor3=GREEN; Instance.new("UICorner",b).CornerRadius=UDim.new(0,8)
+		local s=Instance.new("UIStroke",b); s.Color=GREEN; s.Thickness=2
+		local p=Instance.new("Frame",content); p.Size=UDim2.new(1,-12,1,-12); p.Position=UDim2.fromOffset(6,6); p.Visible=false; p.BackgroundTransparency=1
+		local lbl=Instance.new("TextLabel",p); lbl.Size=UDim2.new(1,0,0,26); lbl.Text="หน้านี้คือ: "..name; lbl.TextColor3=WHITE
+		lbl.Font=Enum.Font.GothamBold; lbl.TextSize=18; lbl.BackgroundTransparency=1
+		pages[name]=p
+		b.MouseButton1Click:Connect(function()
+			if current then pages[current].Visible=false end
+			p.Visible=true; current=name
+		end)
+	end
+
+	mkTab("หน้าหลัก"); mkTab("ผู้เล่น"); mkTab("ตั้งค่า"); mkTab("เครดิต")
+	current="หน้าหลัก"; pages[current].Visible=true
+
+	-- Toggle Show/Hide
+	local function toggleMain()
+		if main.Visible then
+			TweenService:Create(main,TweenInfo.new(0.25),{Position=UDim2.new(0.5,0,-0.5,-200)}):Play()
+			task.wait(0.25); main.Visible=false
+		else
+			main.Visible=true
+			TweenService:Create(main,TweenInfo.new(0.25),{Position=UDim2.new(0.5,0,0.5,0)}):Play()
+		end
+	end
+	toggle.MouseButton1Click:Connect(toggleMain)
+
+	-- Drag
+	smoothDrag(bar,main)
+
+	return gui
+end
+
+_G.__UFOX_FULL_API.showMainUI = showMainUI
+
+--=======================
+-- Boot Flow
+--=======================
+local function boot()
+	_G.__UFOX_FULL_API.showKeyUI(function()
+		_G.__UFOX_FULL_API.showSplash(function()
+			_G.__UFOX_FULL_API.showMainUI()
+		end)
+	end)
+end
+
+boot()
