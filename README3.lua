@@ -1,262 +1,383 @@
--- UFO HUB X • Part 1/3  (Key UI + Storage + Full Keys)
-if _G.__UFOX_FULL then return end
-_G.__UFOX_FULL = true
+--[[
+UFO HUB X — ONE-FILE SUPER LOADER (Key→Splash→Main UI)
+ธีม: ดำ + เขียวเอเลียน | รวมทุกระบบที่คุยกันไว้ แบบไม่ตัดอะไรทิ้ง
+ทำงานได้บนตัวรัน (Delta X / KRNL / อื่น ๆ) และใน Studio ก็ได้
+]]--
 
--- Services
-local Players      = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local UIS          = game:GetService("UserInputService")
-local HttpService  = game:GetService("HttpService")
-local StarterGui   = game:GetService("StarterGui")
-local lp           = Players.LocalPlayer or Players.PlayerAdded:Wait()
-local pg           = lp:WaitForChild("PlayerGui")
+------------------------ SERVICES ------------------------
+local Players        = game:GetService("Players")
+local TweenService   = game:GetService("TweenService")
+local UserInputService= game:GetService("UserInputService")
+local RunService     = game:GetService("RunService")
+local StarterGui     = game:GetService("StarterGui")
+local HttpService    = game:GetService("HttpService")
 
--- Theme
-local GREEN   = Color3.fromRGB(22,247,123)
-local WHITE   = Color3.fromRGB(255,255,255)
-local BLACK   = Color3.fromRGB(0,0,0)
-local CARD_BG = Color3.fromRGB(18,20,24)
-local INPUTBG = Color3.fromRGB(32,36,42)
-local RED     = Color3.fromRGB(235,70,85)
-local TXT     = Color3.fromRGB(235,240,245)
-local TXT2    = Color3.fromRGB(170,180,190)
-local LOGO_ID = "rbxassetid://106029438403666"
+local lp = Players.LocalPlayer
+local pg = lp:FindFirstChildOfClass("PlayerGui") or lp:WaitForChild("PlayerGui")
 
--- Utils
-local function notify(msg) pcall(function() StarterGui:SetCore("SendNotification",{Title="UFO HUB X",Text=msg,Duration=5}) end) end
-local function center(o) o.AnchorPoint=Vector2.new(0.5,0.5); o.Position=UDim2.fromScale(0.5,0.5) end
-local function smoothDrag(handle, frame)
-	local dragging, startPos, startInput
+------------------------ THEME ---------------------------
+local GREEN  = Color3.fromRGB(22,247,123)
+local BLACK  = Color3.fromRGB(18,20,24)
+local BG     = Color3.fromRGB(14,15,18)
+local SOFT   = Color3.fromRGB(30,32,36)
+local WHITE  = Color3.fromRGB(255,255,255)
+local RED    = Color3.fromRGB(235,70,85)
+local TXT    = Color3.fromRGB(235,240,245)
+local TXT2   = Color3.fromRGB(170,180,190)
+local LOGO   = "rbxassetid://106029438403666"
+
+------------------------ FILE STORAGE (for executors) ----
+local haveFS = (writefile and readfile and isfile and makefolder) and true or false
+local STORE_DIR = "UFO_HUB_X"
+local STORE = STORE_DIR.."/store.json"
+
+local function ensureFolder()
+	if haveFS then pcall(function() if not isfolder(STORE_DIR) then makefolder(STORE_DIR) end end) end
+end
+
+local function loadStore()
+	if haveFS and isfile(STORE) then
+		local ok, data = pcall(function() return HttpService:JSONDecode(readfile(STORE)) end)
+		if ok and typeof(data) == "table" then return data end
+	end
+	_G.__UFOX_STORE = _G.__UFOX_STORE or {}
+	return _G.__UFOX_STORE
+end
+
+local function saveStore(tab)
+	if haveFS then
+		ensureFolder()
+		pcall(function() writefile(STORE, HttpService:JSONEncode(tab)) end)
+	else
+		_G.__UFOX_STORE = tab
+	end
+end
+
+local STORE_DATA = loadStore()
+
+------------------------ KEY DATABASE --------------------
+-- 100 keys (ครบจากที่นายให้)
+local NORMAL_KEYS = {
+"UFOHUBXDMF9YK0XZM24h","UFOHUBX70OJIR4IF124h","UFOHUBX59XO3283ZB24h","UFOHUBX0G86MNVDJX24h",
+"UFOHUBX4Z80TW9L5H24h","UFOHUBX7RXW8H0JX224h","UFOHUBX66CXRW8Q6P24h","UFOHUBX8G8K2S2QO624h",
+"UFOHUBXWZQJX4BC1V24h","UFOHUBX9W6A1GZ0MZ24h","UFOHUBXK8B3O3NGOB24h","UFOHUBX8N3O2R3V8K24h",
+"UFOHUBX8N9VQ8Z6Q324h","UFOHUBX3UCFY0X5VH24h","UFOHUBX4XHZC7Y2J124h","UFOHUBX6H5H2M8H1B24h",
+"UFOHUBX6N2MBXJ0ZP24h","UFOHUBXQ3D4XK3W7C24h","UFOHUBX9Y0Z6R3V1W24h","UFOHUBX0G2L0Q8P0A24h",
+"UFOHUBX2T2M4X0P1P24h","UFOHUBX2QFQ5H2QK724h","UFOHUBX7H4M9H3M6I24h","UFOHUBX0C3W2J8O2U24h",
+"UFOHUBX1Z0V2J8L5W24h","UFOHUBX7G8G7S8D7Z24h","UFOHUBX9A5K6B4W0P24h","UFOHUBX2C6C7S4T6J24h",
+"UFOHUBXT9E4L7W1Z824h","UFOHUBX2X9V4I8Y4N24h","UFOHUBX2F2Z2M5S5D24h","UFOHUBX1D3H7N9T2K24h",
+"UFOHUBX8W4B8M2A1P24h","UFOHUBX3V8Q5M7K2C24h","UFOHUBX7Q2I5G3W0Z24h","UFOHUBX4N0E0N4L0P24h",
+"UFOHUBX0G8N7L7C3V24h","UFOHUBX5Q1J7M6Z4A24h","UFOHUBXC5I0H9U3S824h","UFOHUBX0J4Q1E4T4E24h",
+"UFOHUBX5C1E1J0B3O24h","UFOHUBX7T6M5N4V1S24h","UFOHUBX4I9A0V0E4Z24h","UFOHUBX1Z8N4R2Q0K24h",
+"UFOHUBX3Y5K1H2Q3J24h","UFOHUBX5J7C2G1P8M24h","UFOHUBX1R0I7Z8S0V24h","UFOHUBX6G2K5N8L3D24h",
+"UFOHUBX2N1Z5M4C7B24h","UFOHUBX3W6Q4E9J1N24h","UFOHUBX4Q2M6H1C9X24h","UFOHUBX7P4V2L9T0I24h",
+"UFOHUBX8M0D1Q3W7E24h","UFOHUBX9L5S2A4K6Z24h","UFOHUBX0K1P3O5I7U24h","UFOHUBX4U3I5Y7T9R24h",
+"UFOHUBX2M4N6B8V0C24h","UFOHUBX6B7V9C1X3Z24h","UFOHUBX8V1C3X5Z7B24h","UFOHUBX0C2X4Z6B8N24h",
+"UFOHUBX3Z5B7N9M1V24h","UFOHUBX5B8N0M2V4C24h","UFOHUBX7N2M4V6C8X24h","UFOHUBX9M4V6C8X0Z24h",
+"UFOHUBX1V3C5X7Z9B24h","UFOHUBX2C4X6Z8B0N24h","UFOHUBX3X6Z8B0N2M24h","UFOHUBX4Z7B9N1M3V24h",
+"UFOHUBX5N9M1V3C5X24h","UFOHUBX6M1V3C5X7Z24h","UFOHUBX7V3C5X7Z9B24h","UFOHUBX8C5X7Z9B1N24h",
+"UFOHUBX9X7Z9B1N3M24h","UFOHUBX0Z9B1N3M5V24h","UFOHUBX1B1N3M5V7C24h","UFOHUBX2N3M5V7C9X24h",
+"UFOHUBX3M5V7C9X1Z24h","UFOHUBX4V7C9X1Z3B24h","UFOHUBX5C9X1Z3B5N24h","UFOHUBX6X1Z3B5N7M24h",
+"UFOHUBX7Z3B5N7M9V24h","UFOHUBX8B5N7M9V1C24h","UFOHUBX9N7M9V1C3X24h","UFOHUBX0M9V1C3X5Z24h",
+"UFOHUBX1V1C3X5Z7B24h","UFOHUBX2C3X5Z7B9N24h","UFOHUBX3X5Z7B9N1M24h","UFOHUBX4Z7B9N1M3V24h",
+"UFOHUBX5B9N1M3V5C24h","UFOHUBX6N1M3V5C7X24h","UFOHUBX7M3V5C7X9Z24h","UFOHUBX8V5C7X9Z1B24h",
+"UFOHUBX9C7X9Z1B3N24h","UFOHUBX0X9Z1B3N5M24h","UFOHUBX1Z1B3N5M7V24h","UFOHUBX2B3N5M7V9C24h",
+"UFOHUBX3N5M7V9C1X24h","UFOHUBX4M7V9C1X3Z24h","UFOHUBX5V9C1X3Z5B24h","UFOHUBX6C1X3Z5B7N24h",
+"UFOHUBX7X3Z5B7N9M24h","UFOHUBX8Z5B7N9M1V24h","UFOHUBX9B7N9M1V3C24h","UFOHUBX1H049FTRA024h",
+"UFOHUBX7GB158W98N24h","UFOHUBXLQ7T871OFY24h","UFOHUBXZPPK52HC8G24h","UFOHUBXBO6IC0I7MM24h",
+}
+
+-- ทำเป็น set สำหรับเช็คเร็ว
+local NORMAL_SET = {}
+for _,k in ipairs(NORMAL_KEYS) do NORMAL_SET[k] = true end
+
+------------------------ HELPERS -------------------------
+local function stroke(obj, color, thick) local s=Instance.new("UIStroke",obj); s.Color=color; s.Thickness=thick or 2; return s end
+local function round(obj, r) local u=Instance.new("UICorner",obj); u.CornerRadius=UDim.new(0,r or 12); return u end
+local function center(frame) frame.AnchorPoint=Vector2.new(0.5,0.5); frame.Position=UDim2.fromScale(0.5,0.5) end
+
+-- ลากแบบสมูท
+local function enableDrag(handle, target)
+	handle.Active = true; target.Active=true
+	local dragging=false; local dragStart; local startPos
 	handle.InputBegan:Connect(function(i)
 		if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
-			dragging=true; startInput=i; startPos=frame.Position
+			dragging=true; dragStart=i.Position; startPos=target.Position
+			i.Changed:Connect(function() if i.UserInputState==Enum.UserInputState.End then dragging=false end end)
 		end
 	end)
-	handle.InputEnded:Connect(function(i) if i==startInput then dragging=false end end)
-	UIS.InputChanged:Connect(function(i)
+	UserInputService.InputChanged:Connect(function(i)
 		if dragging and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-			local d=i.Position-startInput.Position
-			frame.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+d.X,startPos.Y.Scale,startPos.Y.Offset+d.Y)
+			local d=i.Position-dragStart
+			local goal=UDim2.new(startPos.X.Scale, startPos.X.Offset+d.X, startPos.Y.Scale, startPos.Y.Offset+d.Y)
+			TweenService:Create(target, TweenInfo.new(0.10, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position=goal}):Play()
+			STORE_DATA.lastPos = {goal.X.Scale,goal.X.Offset,goal.Y.Scale,goal.Y.Offset}
+			saveStore(STORE_DATA)
 		end
 	end)
 end
 
--- Storage (writefile fallback to _G)
-local PATH="UFOX_KEY_STORE.json"
-local haveFS=(writefile and isfile and readfile) and true or false
-local function readStore()
-	if haveFS and isfile(PATH) then
-		local ok,res=pcall(function() return HttpService:JSONDecode(readfile(PATH)) end)
-		if ok and type(res)=="table" then return res end
-	end
-	_G.__UFOX_MEM=_G.__UFOX_MEM or {}; return _G.__UFOX_MEM
-end
-local function writeStore(t)
-	if haveFS then pcall(function() writefile(PATH,HttpService:JSONEncode(t)) end) else _G.__UFOX_MEM=t end
-end
-
--- Full Keys (100 ปกติ + 2 พิเศษ) — บีบให้อยู่ไม่กี่บรรทัด
-local NORMAL_KEYS = {"UFOHUBXDMF9YK0XZM24h","UFOHUBX70OJIR4IF124h","UFOHUBX59XO3283ZB24h","UFOHUBX0G86MNVDJX24h","UFOHUBX4Z80TW9L5H24h","UFOHUBX7RXW8H0JX224h","UFOHUBX66CXRW8Q6P24h","UFOHUBX8G8K2S2QO624h","UFOHUBXWZQJX4BC1V24h","UFOHUBX9W6A1GZ0MZ24h","UFOHUBXK8B3O3NGOB24h","UFOHUBX8N3O2R3V8K24h","UFOHUBX8N9VQ8Z6Q324h","UFOHUBX3UCFY0X5VH24h","UFOHUBX4XHZC7Y2J124h","UFOHUBX6H5H2M8H1B24h","UFOHUBX6N2MBXJ0ZP24h","UFOHUBXQ3D4XK3W7C24h","UFOHUBX9Y0Z6R3V1W24h","UFOHUBX0G2L0Q8P0A24h","UFOHUBX2T2M4X0P1P24h","UFOHUBX2QFQ5H2QK724h","UFOHUBX7H4M9H3M6I24h","UFOHUBX0C3W2J8O2U24h","UFOHUBX1Z0V2J8L5W24h","UFOHUBX7G8G7S8D7Z24h","UFOHUBX9A5K6B4W0P24h","UFOHUBX2C6C7S4T6J24h","UFOHUBXT9E4L7W1Z824h","UFOHUBX2X9V4I8Y4N24h","UFOHUBX2F2Z2M5S5D24h","UFOHUBX1D3H7N9T2K24h","UFOHUBX8W4B8M2A1P24h","UFOHUBX3V8Q5M7K2C24h","UFOHUBX7Q2I5G3W0Z24h","UFOHUBX4N0E0N4L0P24h","UFOHUBX0G8N7L7C3V24h","UFOHUBX5Q1J7M6Z4A24h","UFOHUBXC5I0H9U3S824h","UFOHUBX0J4Q1E4T4E24h","UFOHUBX5C1E1J0B3O24h","UFOHUBX7T6M5N4V1S24h","UFOHUBX4I9A0V0E4Z24h","UFOHUBX1Z8N4R2Q0K24h","UFOHUBX3Y5K1H2Q3J24h","UFOHUBX5J7C2G1P8M24h","UFOHUBX1R0I7Z8S0V24h","UFOHUBX6G2K5N8L3D24h","UFOHUBX2N1Z5M4C7B24h","UFOHUBX3W6Q4E9J1N24h","UFOHUBX4Q2M6H1C9X24h","UFOHUBX7P4V2L9T0I24h","UFOHUBX8M0D1Q3W7E24h","UFOHUBX9L5S2A4K6Z24h","UFOHUBX0K1P3O5I7U24h","UFOHUBX4U3I5Y7T9R24h","UFOHUBX2M4N6B8V0C24h","UFOHUBX6B7V9C1X3Z24h","UFOHUBX8V1C3X5Z7B24h","UFOHUBX0C2X4Z6B8N24h","UFOHUBX3Z5B7N9M1V24h","UFOHUBX5B8N0M2V4C24h","UFOHUBX7N2M4V6C8X24h","UFOHUBX9M4V6C8X0Z24h","UFOHUBX1V3C5X7Z9B24h","UFOHUBX2C4X6Z8B0N24h","UFOHUBX3X6Z8B0N2M24h","UFOHUBX4Z7B9N1M3V24h","UFOHUBX5N9M1V3C5X24h","UFOHUBX6M1V3C5X7Z24h","UFOHUBX7V3C5X7Z9B24h","UFOHUBX8C5X7Z9B1N24h","UFOHUBX9X7Z9B1N3M24h","UFOHUBX0Z9B1N3M5V24h","UFOHUBX1B1N3M5V7C24h","UFOHUBX2N3M5V7C9X24h","UFOHUBX3M5V7C9X1Z24h","UFOHUBX4V7C9X1Z3B24h","UFOHUBX5C9X1Z3B5N24h","UFOHUBX6X1Z3B5N7M24h","UFOHUBX7Z3B5N7M9V24h","UFOHUBX8B5N7M9V1C24h","UFOHUBX9N7M9V1C3X24h","UFOHUBX0M9V1C3X5Z24h","UFOHUBX1V1C3X5Z7B24h","UFOHUBX2C3X5Z7B9N24h","UFOHUBX3X5Z7B9N1M24h","UFOHUBX4Z7B9N1M3V24h","UFOHUBX5B9N1M3V5C24h","UFOHUBX6N1M3V5C7X24h","UFOHUBX7M3V5C7X9Z24h","UFOHUBX8V5C7X9Z1B24h","UFOHUBX9C7X9Z1B3N24h","UFOHUBX0X9Z1B3N5M24h","UFOHUBX1Z1B3N5M7V24h","UFOHUBX2B3N5M7V9C24h","UFOHUBX3N5M7V9C1X24h","UFOHUBX4M7V9C1X3Z24h","UFOHUBX5V9C1X3Z5B24h","UFOHUBX6C1X3Z5B7N24h","UFOHUBX7X3Z5B7N9M24h","UFOHUBX8Z5B7N9M1V24h","UFOHUBX9B7N9M1V3C24h","UFOHUBX0N9M1V3C5X24h","UFOHUBX1M1V3C5X7Z24h","UFOHUBX2V3C5X7Z9B24h","UFOHUBX3C5X7Z9B1N24h","UFOHUBX4X7Z9B1N3M24h","UFOHUBX5Z9B1N3M5V24h","UFOHUBX6B1N3M5V7C24h","UFOHUBX7N3M5V7C9X24h","UFOHUBX8M5V7C9X1Z24h","UFOHUBX9V7C9X1Z3B24h","UFOHUBX1H049FTRA024h","UFOHUBX7GB158W98N24h","UFOHUBXLQ7T871OFY24h","UFOHUBXZPPK52HC8G24h","UFOHUBXBO6IC0I7MM24h"}
-local NORMAL_SET={} for _,k in ipairs(NORMAL_KEYS) do NORMAL_SET[k]=true end
-
-local function validateKey(inputKey)
-	local s=readStore()
-	if s.perm then return true,"PERM" end
-	if s.session then return true,"SESSION" end
-	if s.expire and os.time()<s.expire then return true,"24H" end
-	if inputKey=="PanuphongArtphairin" then s.perm=true; s.session=nil; s.expire=nil; writeStore(s); return true,"PERM" end
-	if inputKey=="JJJMAX" then s.session=true; s.expire=nil; writeStore(s); return true,"SESSION" end
-	if NORMAL_SET[inputKey] then s.expire=os.time()+86400; s.session=nil; writeStore(s); return true,"24H" end
+------------------------ KEY VALIDATION -------------------
+local function keyStatus()
+	if STORE_DATA.perm then return true,"PERM" end
+	if STORE_DATA.session then return true,"SESSION" end
+	if STORE_DATA.expire and os.time() < STORE_DATA.expire then return true,"24H" end
 	return false
 end
 
--- Key UI (ขอบเขียวทุกชิ้น, ปุ่มใหญ่, Get/Discord แยกซ้ายขวา)
-local function showKeyUI(onOK)
-	local gui=Instance.new("ScreenGui",pg); gui.Name="UFOX_KEY_UI"; gui.DisplayOrder=2000
-	local dim=Instance.new("Frame",gui); dim.Size=UDim2.fromScale(1,1); dim.BackgroundColor3=BLACK; dim.BackgroundTransparency=0.35
-	local card=Instance.new("Frame",gui); card.Size=UDim2.fromOffset(680,360); center(card); card.BackgroundColor3=CARD_BG
-	Instance.new("UICorner",card).CornerRadius=UDim.new(0,16); local cardStroke=Instance.new("UIStroke",card); cardStroke.Color=GREEN; cardStroke.Thickness=2
+local function applyKey(k)
+	if k=="PanuphongArtphairin" then
+		STORE_DATA.perm=true; STORE_DATA.session=nil; STORE_DATA.expire=nil; saveStore(STORE_DATA); return true,"PERM"
+	elseif k=="JJJMAX" then
+		STORE_DATA.session=true; STORE_DATA.perm=nil; STORE_DATA.expire=nil; saveStore(STORE_DATA); return true,"SESSION"
+	elseif NORMAL_SET[k] then
+		STORE_DATA.expire=os.time()+86400; STORE_DATA.perm=nil; STORE_DATA.session=nil; saveStore(STORE_DATA); return true,"24H"
+	end
+	return false
+end
 
-	local header=Instance.new("Frame",card); header.Size=UDim2.new(1,-24,0,56); header.Position=UDim2.fromOffset(12,12); header.BackgroundTransparency=1
-	local logo=Instance.new("ImageLabel",header); logo.Image=LOGO_ID; logo.Size=UDim2.fromOffset(34,34); logo.Position=UDim2.fromOffset(4,11); logo.BackgroundTransparency=1
-	local head=Instance.new("TextLabel",header); head.Text="KEY SYSTEM · เข้าสคริปต์ต้องมีคีย์ (อายุ 24 ชม.)"; head.Font=Enum.Font.GothamBold; head.TextSize=18
-	head.TextColor3=TXT; head.TextXAlignment=Enum.TextXAlignment.Left; head.Size=UDim2.new(1,-120,1,-8); head.Position=UDim2.fromOffset(46,8); head.BackgroundTransparency=1
-	local close=Instance.new("TextButton",header); close.Text="✕"; close.Size=UDim2.fromOffset(40,40); close.Position=UDim2.new(1,-44,0,8)
-	close.BackgroundColor3=Color3.fromRGB(36,40,46); close.Font=Enum.Font.GothamBold; close.TextSize=20; close.TextColor3=TXT; close.AutoButtonColor=false
-	Instance.new("UICorner",close).CornerRadius=UDim.new(0,10); local cb=Instance.new("UIStroke",close); cb.Color=GREEN; cb.Thickness=2
-	close.MouseEnter:Connect(function() close.BackgroundColor3=RED; close.TextColor3=WHITE end)
-	close.MouseLeave:Connect(function() close.BackgroundColor3=Color3.fromRGB(36,40,46); close.TextColor3=TXT end)
+------------------------ KEY UI --------------------------
+local function showKeyUI(onOK)
+	-- ถ้ามีสิทธิ์แล้ว ข้าม
+	local ok,typ = keyStatus()
+	if ok then onOK(typ) return end
+
+	local gui = Instance.new("ScreenGui", pg)
+	gui.Name="UFOX_KEY_UI"; gui.DisplayOrder=5000; gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
+
+	local dim = Instance.new("Frame", gui)
+	dim.BackgroundColor3 = Color3.new(0,0,0); dim.BackgroundTransparency=0.25; dim.Size=UDim2.fromScale(1,1)
+
+	local card = Instance.new("Frame", gui)
+	card.Size=UDim2.fromOffset(740, 420); center(card)
+	card.BackgroundColor3=BLACK; round(card,16); stroke(card, GREEN, 2)
+
+	-- Header
+	local head = Instance.new("Frame", card)
+	head.Size=UDim2.new(1,-24,0,62); head.Position=UDim2.fromOffset(12,10); head.BackgroundTransparency=1
+
+	local logo = Instance.new("ImageLabel", head)
+	logo.Image=LOGO; logo.BackgroundTransparency=1; logo.Size=UDim2.fromOffset(38,38); logo.Position=UDim2.fromOffset(0,12)
+
+	local keyTitle = Instance.new("TextLabel", head)
+	keyTitle.BackgroundTransparency=1
+	keyTitle.TextXAlignment=Enum.TextXAlignment.Left
+	keyTitle.Font=Enum.Font.GothamBold; keyTitle.TextSize=20; keyTitle.TextColor3=TXT
+	keyTitle.Text = "KEY SYSTEM · เข้าสคริปต์ต้องมีคีย์ (อายุ 24 ชม.)"
+	keyTitle.Position=UDim2.fromOffset(46,10); keyTitle.Size=UDim2.new(1,-120,1,-10)
+
+	local close = Instance.new("TextButton", head)
+	close.Text="✕"; close.BackgroundColor3=RED; close.TextColor3=WHITE; close.Font=Enum.Font.GothamBold; close.TextSize=22
+	close.Size=UDim2.fromOffset(42,42); close.Position=UDim2.new(1,-46,0,10); round(close,10)
+	close.AutoButtonColor=true
 	close.MouseButton1Click:Connect(function() gui:Destroy() end)
 
-	local input=Instance.new("TextBox",card); input.PlaceholderText="ใส่คีย์ที่นี่"; input.Text=""; input.Size=UDim2.new(1,-40,0,44)
-	input.Position=UDim2.fromOffset(20,96); input.BackgroundColor3=INPUTBG; input.TextColor3=TXT; input.PlaceholderColor3=TXT2; input.Font=Enum.Font.Gotham; input.TextSize=16
-	Instance.new("UICorner",input).CornerRadius=UDim.new(0,12); local inStroke=Instance.new("UIStroke",input); inStroke.Color=GREEN; inStroke.Thickness=2
+	-- Title UFO HUB X (ใหญ่ กลาง)
+	local title = Instance.new("TextLabel", card)
+	title.RichText=true; title.BackgroundTransparency=1; title.TextScaled=false
+	title.Font=Enum.Font.GothamBlack; title.TextSize=32
+	title.Text = '<font color="#16F77B">UFO</font> <font color="#FFFFFF">HUB X</font>'
+	title.TextColor3 = WHITE; title.Size=UDim2.new(1,0,0,40)
+	title.AnchorPoint=Vector2.new(0.5,0); title.Position=UDim2.new(0.5,0,0,80)
 
-	local submit=Instance.new("TextButton",card); submit.Text="Submit Key  ➜"; submit.Size=UDim2.new(1,-40,0,50)
-	submit.Position=UDim2.fromOffset(20,154); submit.BackgroundColor3=BLACK; submit.Font=Enum.Font.GothamBlack; submit.TextSize=18; submit.TextColor3=WHITE
-	Instance.new("UICorner",submit).CornerRadius=UDim.new(0,12); local sb=Instance.new("UIStroke",submit); sb.Color=GREEN; sb.Thickness=2
-	submit.MouseEnter:Connect(function() TweenService:Create(submit,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(26,30,36)}):Play() end)
-	submit.MouseLeave:Connect(function() TweenService:Create(submit,TweenInfo.new(0.1),{BackgroundColor3=BLACK}):Play() end)
+	-- Input
+	local input = Instance.new("TextBox", card)
+	input.Size=UDim2.new(1,-44,0,48); input.Position=UDim2.fromOffset(22,130)
+	input.BackgroundColor3=SOFT; input.TextColor3=TXT; input.PlaceholderColor3=TXT2; input.PlaceholderText="ใส่คีย์ที่นี่"
+	input.Font=Enum.Font.Gotham; input.TextSize=17; round(input,12); stroke(input, GREEN,2)
 
-	-- แถวล่าง: Get Key (ซ้าย) / Discord (ขวา)
-	local row=Instance.new("Frame",card); row.Size=UDim2.new(1,-40,0,56); row.Position=UDim2.new(0,20,1,-72); row.BackgroundTransparency=1
-	local getKey=Instance.new("TextButton",row); getKey.Text="🔑  Get Key"; getKey.Size=UDim2.fromOffset(220,56); getKey.Position=UDim2.fromOffset(0,0)
-	getKey.BackgroundColor3=BLACK; getKey.Font=Enum.Font.GothamSemibold; getKey.TextSize=17; getKey.TextColor3=WHITE; Instance.new("UICorner",getKey).CornerRadius=UDim.new(0,12); local gS=Instance.new("UIStroke",getKey); gS.Color=GREEN; gS.Thickness=2
-	local disc=Instance.new("TextButton",row); disc.Text="💬  Discord"; disc.Size=UDim2.fromOffset(220,56); disc.AnchorPoint=Vector2.new(1,0); disc.Position=UDim2.new(1,0,0,0)
-	disc.BackgroundColor3=BLACK; disc.Font=Enum.Font.GothamSemibold; disc.TextSize=17; disc.TextColor3=WHITE; Instance.new("UICorner",disc).CornerRadius=UDim.new(0,12); local dS=Instance.new("UIStroke",disc); dS.Color=GREEN; dS.Thickness=2
+	-- Submit
+	local submit = Instance.new("TextButton", card)
+	submit.Text="Submit Key  ➜"; submit.Font=Enum.Font.GothamBlack; submit.TextSize=20; submit.TextColor3=WHITE
+	submit.Size=UDim2.new(1,-44,0,54); submit.Position=UDim2.fromOffset(22,190)
+	submit.BackgroundColor3=SOFT; round(submit,12); stroke(submit, GREEN,2)
 
-	local function copy(url) if setclipboard then setclipboard(url) end; notify("คัดลอกลิงก์แล้ว: "..url) end
-	getKey.MouseButton1Click:Connect(function() copy("https://linkunlocker.com/ufo-hub-x-wKfUt") end)
-	disc.MouseButton1Click:Connect(function() copy("https://discord.gg/JFHuVVVQ6D") end)
+	-- Bottom buttons row
+	local row = Instance.new("Frame", card)
+	row.BackgroundTransparency=1; row.Size=UDim2.new(1,-44,0,62); row.Position=UDim2.new(0,22,1,-82)
 
-	-- ผ่านคีย์แล้วข้ามอัตโนมัติ
-	local okAlready=validateKey(nil)
-	local function accept()
-		TweenService:Create(card,TweenInfo.new(0.2),{BackgroundTransparency=1}):Play()
-		TweenService:Create(dim,TweenInfo.new(0.2),{BackgroundTransparency=1}):Play()
-		task.delay(0.21,function() gui:Destroy(); if onOK then onOK() end end)
-	end
-	if okAlready then accept(); return end
+	local getKey = Instance.new("TextButton", row)
+	getKey.Text="🔑 Get Key"; getKey.Font=Enum.Font.GothamSemibold; getKey.TextSize=18; getKey.TextColor3=WHITE
+	getKey.BackgroundColor3=SOFT; getKey.Size=UDim2.fromOffset(300,58); round(getKey,12); stroke(getKey,GREEN,2)
+
+	local discord = Instance.new("TextButton", row)
+	discord.Text="💬 Discord"; discord.Font=Enum.Font.GothamSemibold; discord.TextSize=18; discord.TextColor3=WHITE
+	discord.BackgroundColor3=SOFT; discord.Size=UDim2.fromOffset(300,58); round(discord,12); stroke(discord,GREEN,2)
+	discord.AnchorPoint=Vector2.new(1,0); discord.Position=UDim2.new(1,0,0,0)
+
+	-- open links via setclipboard (เข้ากับ executor ทุกเจ้า)
+	local KEY_LINK = "https://linkunlocker.com/ufo-hub-x-wKfUt"
+	local DISCORD  = "https://discord.gg/JFHuVVVQ6D"
+	local function toast(msg) pcall(function() StarterGui:SetCore("SendNotification",{Title="UFO HUB X",Text=msg,Duration=4}) end) end
+	getKey.MouseButton1Click:Connect(function()
+		if setclipboard then setclipboard(KEY_LINK); toast("คัดลอกลิงก์ Get Key แล้ว! วางในเบราว์เซอร์ได้เลย") end
+	end)
+	discord.MouseButton1Click:Connect(function()
+		if setclipboard then setclipboard(DISCORD); toast("คัดลอกลิงก์ Discord แล้ว!") end
+	end)
 
 	submit.MouseButton1Click:Connect(function()
-		if validateKey(input.Text) then accept()
-		else input.Text=""; input.PlaceholderText="❌ คีย์ไม่ถูกต้อง"; inStroke.Color=RED; task.delay(0.35,function() inStroke.Color=GREEN end) end
+		local ok,typ = applyKey(input.Text)
+		if ok then
+			TweenService:Create(card, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size=UDim2.fromOffset(740,0)}):Play()
+			task.wait(0.15); gui:Destroy()
+			onOK(typ)
+		else
+			input.Text=""; input.PlaceholderText="❌ คีย์ไม่ถูกต้อง"; stroke(input,RED,2)
+			task.delay(0.4,function() for _,c in ipairs(input:GetChildren()) do if c:IsA("UIStroke") then c.Color=GREEN end end end)
+		end
 	end)
 end
 
-_G.__UFOX_FULL_API = { showKeyUI = showKeyUI, smoothDrag = smoothDrag, theme = {GREEN=GREEN,WHITE=WHITE,LOGO_ID=LOGO_ID,TXT=TXT} }
--- UFO HUB X • Part 2/3 (Splash)
-local TweenService = game:GetService("TweenService")
-local Players = game:GetService("Players")
-local pg = Players.LocalPlayer:WaitForChild("PlayerGui")
-
-local GREEN = _G.__UFOX_FULL_API.theme.GREEN
-local WHITE = _G.__UFOX_FULL_API.theme.WHITE
-local LOGO_ID = _G.__UFOX_FULL_API.theme.LOGO_ID
-
+------------------------ SPLASH / LOADING ----------------
 local function showSplash(onDone)
-	local gui=Instance.new("ScreenGui",pg); gui.Name="UFOX_SPLASH"; gui.DisplayOrder=2500
-	local bg=Instance.new("Frame",gui); bg.Size=UDim2.fromScale(1,1); bg.BackgroundColor3=Color3.new(0,0,0)
+	local gui = Instance.new("ScreenGui", pg); gui.Name="UFOX_SPLASH"; gui.DisplayOrder=4000
+	local dim = Instance.new("Frame", gui); dim.Size=UDim2.fromScale(1,1); dim.BackgroundColor3=Color3.new(0,0,0)
 
-	local card=Instance.new("Frame",bg); card.Size=UDim2.fromOffset(560,300); card.AnchorPoint=Vector2.new(0.5,0.5); card.Position=UDim2.fromScale(0.5,0.5)
-	card.BackgroundColor3=Color3.fromRGB(18,20,24); Instance.new("UICorner",card).CornerRadius=UDim.new(0,16); local st=Instance.new("UIStroke",card); st.Color=GREEN; st.Thickness=2
+	local card = Instance.new("Frame", gui); card.Size=UDim2.fromOffset(540, 200); center(card)
+	card.BackgroundColor3=BLACK; round(card,18); stroke(card, GREEN,2)
 
-	local logo=Instance.new("ImageLabel",card); logo.Image=LOGO_ID; logo.Size=UDim2.fromOffset(96,96); logo.AnchorPoint=Vector2.new(0.5,0); logo.Position=UDim2.new(0.5,0,0,14); logo.BackgroundTransparency=1
-	local title=Instance.new("TextLabel",card); title.Text='<font color="#16F77B">UFO</font> <font color="#FFFFFF">HUB X</font>'; title.RichText=true; title.BackgroundTransparency=1
-	title.Size=UDim2.new(1,0,0,42); title.Position=UDim2.new(0.5,0,0,120); title.AnchorPoint=Vector2.new(0.5,0); title.Font=Enum.Font.GothamBold; title.TextSize=30; title.TextColor3=WHITE
+	local title = Instance.new("TextLabel", card)
+	title.RichText=true; title.BackgroundTransparency=1; title.Font=Enum.Font.GothamBlack; title.TextSize=24
+	title.Text = "🚀  Loading <font color=\"#16F77B\">UFO</font> <font color=\"#FFFFFF\">HUB X</font>"
+	title.TextColor3=WHITE; title.Size=UDim2.new(1,0,0,34); title.Position=UDim2.fromOffset(0,24)
 
-	local barBG=Instance.new("Frame",card); barBG.Size=UDim2.new(1,-80,0,30); barBG.Position=UDim2.new(0.5,0,0,175); barBG.AnchorPoint=Vector2.new(0.5,0)
-	barBG.BackgroundColor3=Color3.fromRGB(50,50,50); Instance.new("UICorner",barBG).CornerRadius=UDim.new(0,12); local bs=Instance.new("UIStroke",barBG); bs.Color=WHITE; bs.Thickness=2
-	local fill=Instance.new("Frame",barBG); fill.Size=UDim2.new(0,0,1,0); fill.BackgroundColor3=GREEN; Instance.new("UICorner",fill).CornerRadius=UDim.new(0,12)
-	local rocket=Instance.new("TextLabel",barBG); rocket.Text="🚀"; rocket.TextSize=22; rocket.BackgroundTransparency=1; rocket.AnchorPoint=Vector2.new(0.5,0.5); rocket.Size=UDim2.fromOffset(28,28)
-	local percent=Instance.new("TextLabel",card); percent.Text="0%"; percent.BackgroundTransparency=1; percent.Size=UDim2.new(1,0,0,40)
-	percent.Position=UDim2.new(0.5,0,0,215); percent.AnchorPoint=Vector2.new(0.5,0); percent.Font=Enum.Font.GothamBold; percent.TextSize=32; percent.TextColor3=WHITE
+	-- Bar
+	local bar = Instance.new("Frame", card); bar.Size=UDim2.new(1,-80,0,20); bar.Position=UDim2.fromOffset(40,90)
+	bar.BackgroundColor3=SOFT; round(bar,10); stroke(bar,WHITE,2)
+	local fill = Instance.new("Frame", bar); fill.Size=UDim2.new(0,0,1,0); fill.BackgroundColor3=GREEN; round(fill,10)
 
-	card.Size=UDim2.fromOffset(520,280)
-	TweenService:Create(card,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Size=UDim2.fromOffset(560,300)}):Play()
+	-- Rocket
+	local rocket = Instance.new("TextLabel", card)
+	rocket.BackgroundTransparency=1; rocket.Text="🚀"; rocket.Font=Enum.Font.GothamBlack; rocket.TextSize=28
+	rocket.Position=UDim2.fromOffset(38,82)
 
-	local TOTAL=10; local start=tick(); local LEAD=10
-	while true do
-		local t=math.clamp((tick()-start)/TOTAL,0,1); local e=1-(1-t)^3
-		fill.Size=UDim2.new(e,0,1,0)
-		local w=barBG.AbsoluteSize.X; rocket.Position=UDim2.new(0.5, e*w - w/2 + LEAD, 0.5, 0)
-		percent.Text=("%d%%"):format(math.floor(e*100))
-		if t>=1 then break end
-		task.wait()
+	-- Percent
+	local percent = Instance.new("TextLabel", card)
+	percent.BackgroundTransparency=1; percent.Text="0%"; percent.Font=Enum.Font.GothamBold; percent.TextSize=22
+	percent.TextColor3=WHITE; percent.Position=UDim2.fromOffset(0,130); percent.Size=UDim2.new(1,0,0,28)
+
+	-- Animate 4.5s
+	local steps = 100; local dur=4.5
+	for i=0,steps do
+		local a = i/steps
+		fill.Size = UDim2.new(a,0,1,0)
+		local px = bar.AbsolutePosition.X + bar.AbsoluteSize.X * a
+		rocket.Position = UDim2.fromOffset((px - card.AbsolutePosition.X) - 8, 82)
+		percent.Text = tostring(math.floor(a*100)).."%"
+		task.wait(dur/steps)
 	end
-
-	TweenService:Create(card,TweenInfo.new(0.45),{BackgroundTransparency=1}):Play()
-	TweenService:Create(bg,TweenInfo.new(0.45),{BackgroundTransparency=1}):Play()
-	task.wait(0.46); gui:Destroy(); if onDone then onDone() end
+	task.wait(0.15)
+	gui:Destroy()
+	if onDone then onDone() end
 end
 
-_G.__UFOX_FULL_API.showSplash = showSplash
--- UFO HUB X • Part 3/3 (Main UI + Flow)
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local UIS = game:GetService("UserInputService")
-local lp = Players.LocalPlayer
-local pg = lp:WaitForChild("PlayerGui")
+------------------------ MAIN UI -------------------------
+local singleton = nil
+local toggleBtn = nil
 
-local T = _G.__UFOX_FULL_API.theme
-local smoothDrag = _G.__UFOX_FULL_API.smoothDrag
+local function buildMainUI()
+	if singleton and singleton.Parent then return singleton end
 
-local function showMainUI()
-	local gui=Instance.new("ScreenGui",pg); gui.Name="UFOX_MAIN"; gui.DisplayOrder=1500
+	local gui = Instance.new("ScreenGui", pg); gui.Name="UFOX_MAIN"; gui.DisplayOrder=3000
+	singleton = gui
 
-	-- Toggle (ลากได้) — ขอบเขียว
-	local toggle=Instance.new("ImageButton",gui); toggle.Image=T.LOGO_ID; toggle.BackgroundColor3=Color3.fromRGB(24,28,34)
-	toggle.Size=UDim2.fromOffset(76,76); toggle.Position=UDim2.fromOffset(24,(pg.AbsoluteSize.Y/2)-38); Instance.new("UICorner",toggle).CornerRadius=UDim.new(0,16)
-	local tS=Instance.new("UIStroke",toggle); tS.Color=T.GREEN; tS.Thickness=2; smoothDrag(toggle,toggle)
+	-- Toggle (ปุ่มลอย เล็กลง, ลากได้)
+	toggleBtn = Instance.new("ImageButton", gui)
+	toggleBtn.Image = LOGO; toggleBtn.BackgroundColor3=SOFT; round(toggleBtn,14); stroke(toggleBtn,WHITE,2)
+	toggleBtn.Size=UDim2.fromOffset(84,84); toggleBtn.Position=UDim2.new(0,24,0.5,-42); toggleBtn.AutoButtonColor=true
+	enableDrag(toggleBtn, toggleBtn)
 
-	-- Window หลัก — ทุกกรอบขอบเขียว
-	local win=Instance.new("Frame",gui); win.Size=UDim2.fromOffset(880,420); win.AnchorPoint=Vector2.new(0.5,0.5); win.Position=UDim2.fromScale(0.5,0.5)
-	win.BackgroundColor3=Color3.fromRGB(19,22,26); Instance.new("UICorner",win).CornerRadius=UDim.new(0,14)
-	local wS=Instance.new("UIStroke",win); wS.Color=T.GREEN; wS.Thickness=2
+	-- Window
+	local win = Instance.new("Frame", gui)
+	win.Size=UDim2.fromOffset(820, 440)
+	if STORE_DATA.lastPos then
+		win.Position = UDim2.new(STORE_DATA.lastPos[1], STORE_DATA.lastPos[2], STORE_DATA.lastPos[3], STORE_DATA.lastPos[4])
+	else center(win) end
+	win.BackgroundColor3=BG; round(win,16); stroke(win, WHITE,2)
 
-	local header=Instance.new("Frame",win); header.Size=UDim2.new(1,0,0,52); header.BackgroundColor3=Color3.fromRGB(24,27,32)
-	Instance.new("UICorner",header).CornerRadius=UDim.new(0,14); local hS=Instance.new("UIStroke",header); hS.Color=T.GREEN; hS.Thickness=2
-	local logo=Instance.new("ImageLabel",header); logo.Image=T.LOGO_ID; logo.BackgroundTransparency=1; logo.Size=UDim2.fromOffset(28,28); logo.Position=UDim2.fromOffset(10,12)
-	local title=Instance.new("TextLabel",header); title.RichText=true; title.TextXAlignment=Enum.TextXAlignment.Left; title.BackgroundTransparency=1
-	title.Text='<font color="#16F77B">UFO</font> <font color="#FFFFFF">HUB X</font>'; title.Font=Enum.Font.GothamBold; title.TextSize=20; title.TextColor3=T.TXT; title.Position=UDim2.fromOffset(46,12); title.Size=UDim2.new(1,-100,0,28)
+	-- Header
+	local head = Instance.new("Frame", win); head.Size=UDim2.new(1,0,0,56); head.BackgroundColor3=BLACK; round(head,16)
+	local logo = Instance.new("ImageLabel", head); logo.Image=LOGO; logo.Size=UDim2.fromOffset(32,32); logo.Position=UDim2.fromOffset(14,12); logo.BackgroundTransparency=1
+	local title = Instance.new("TextLabel", head)
+	title.RichText=true; title.BackgroundTransparency=1; title.Font=Enum.Font.GothamBlack; title.TextSize=22; title.TextXAlignment=Enum.TextXAlignment.Left
+	title.Text = '<font color="#16F77B">UFO</font> <font color="#FFFFFF">HUB X</font>'
+	title.TextColor3=WHITE; title.Position=UDim2.fromOffset(54,14); title.Size=UDim2.new(1,-140,1,-14)
 
-	local close=Instance.new("TextButton",header); close.Text="✕"; close.Size=UDim2.fromOffset(34,34); close.Position=UDim2.new(1,-44,0.5,-17)
-	close.BackgroundColor3=Color3.fromRGB(36,40,46); close.Font=Enum.Font.GothamBold; close.TextSize=18; close.TextColor3=T.TXT
-	Instance.new("UICorner",close).CornerRadius=UDim.new(0,8); local cS=Instance.new("UIStroke",close); cS.Color=T.GREEN; cS.Thickness=2
-	close.MouseEnter:Connect(function() close.BackgroundColor3=Color3.fromRGB(235,70,85); close.TextColor3=T.WHITE end)
-	close.MouseLeave:Connect(function() close.BackgroundColor3=Color3.fromRGB(36,40,46); close.TextColor3=T.TXT end)
-	close.MouseButton1Click:Connect(function() win.Visible=false end)
+	local close = Instance.new("TextButton", head)
+	close.Text="✕"; close.BackgroundColor3=RED; close.TextColor3=WHITE; close.Font=Enum.Font.GothamBold; close.TextSize=20
+	close.Size=UDim2.fromOffset(40,40); close.Position=UDim2.new(1,-50,0.5,-20); round(close,10)
 
-	-- Tabs (ขอบเขียว)
-	local tabs=Instance.new("Frame",win); tabs.Size=UDim2.new(1,-16,0,38); tabs.Position=UDim2.fromOffset(8,60); tabs.BackgroundColor3=Color3.fromRGB(26,28,32)
-	Instance.new("UICorner",tabs).CornerRadius=UDim.new(0,8); local tbs=Instance.new("UIStroke",tabs); tbs.Color=T.GREEN; tbs.Thickness=2
-	local tl=Instance.new("UIListLayout",tabs); tl.FillDirection=Enum.FillDirection.Horizontal; tl.Padding=UDim.new(0,8)
+	enableDrag(head, win)
 
-	local content=Instance.new("Frame",win); content.Size=UDim2.new(1,-16,1,-110); content.Position=UDim2.fromOffset(8,106); content.BackgroundColor3=Color3.fromRGB(26,28,32)
-	Instance.new("UICorner",content).CornerRadius=UDim.new(0,10); local cs=Instance.new("UIStroke",content); cs.Color=T.GREEN; cs.Thickness=2
+	-- Tabs
+	local tabs = Instance.new("Frame", win); tabs.BackgroundTransparency=1; tabs.Position=UDim2.fromOffset(14,64); tabs.Size=UDim2.new(1,-28,0,44)
+	local list = Instance.new("UIListLayout", tabs); list.FillDirection=Enum.FillDirection.Horizontal; list.Padding=UDim.new(0,8)
+	local tabNames = {"หน้าหลัก","ผู้เล่น","ภาพ/แสง","เทเลพอร์ต","ตั้งค่า","เครดิต"}
+	local pages = {}
 
-	-- 2 คอลัมน์ (ขอบเขียว)
-	local colL=Instance.new("Frame",content); colL.Size=UDim2.new(0.5,-6,1,0); colL.BackgroundColor3=Color3.fromRGB(24,27,32)
-	Instance.new("UICorner",colL).CornerRadius=UDim.new(0,10); local lS=Instance.new("UIStroke",colL); lS.Color=T.GREEN; lS.Thickness=2
-	local colR=Instance.new("Frame",content); colR.Size=UDim2.new(0.5,-6,1,0); colR.Position=UDim2.new(0.5,12,0,0); colR.BackgroundColor3=Color3.fromRGB(24,27,32)
-	Instance.new("UICorner",colR).CornerRadius=UDim.new(0,10); local rS=Instance.new("UIStroke",colR); rS.Color=T.GREEN; rS.Thickness=2
+	local content = Instance.new("Frame", win); content.Position=UDim2.fromOffset(14,114); content.Size=UDim2.new(1,-28,1,-128)
+	content.BackgroundColor3=SOFT; round(content,12); stroke(content,WHITE,2)
 
-	-- ตัวอย่างป้าย (เพื่อนค่อยเติมระบบของตัวเอง)
-	local l=Instance.new("TextLabel",colL); l.BackgroundTransparency=1; l.TextColor3=T.GREEN; l.Font=Enum.Font.GothamSemibold; l.TextSize=14; l.TextXAlignment=Enum.TextXAlignment.Left
-	l.Position=UDim2.fromOffset(10,10); l.Size=UDim2.new(1,-20,0,20); l.Text="• ใส่ปุ่ม/สไลเดอร์ด้านซ้าย"
-	local r=Instance.new("TextLabel",colR); r.BackgroundTransparency=1; r.TextColor3=T.GREEN; r.Font=Enum.Font.GothamSemibold; r.TextSize=14; r.TextXAlignment=Enum.TextXAlignment.Left
-	r.Position=UDim2.fromOffset(10,10); r.Size=UDim2.new(1,-20,0,20); r.Text="• ใส่ปุ่ม/สไลเดอร์ด้านขวา"
+	-- สองซีก
+	local left = Instance.new("Frame", content); left.BackgroundColor3=BG; stroke(left,WHITE,1); round(left,10)
+	left.Size=UDim2.new(0.48,0,1,-16); left.Position=UDim2.fromOffset(8,8)
+	local right = Instance.new("Frame", content); right.BackgroundColor3=BG; stroke(right,WHITE,1); round(right,10)
+	right.Size=UDim2.new(0.48,0,1,-16); right.Position=UDim2.new(1,-right.Size.X.Offset-8,0,8); right.AnchorPoint=Vector2.new(1,0)
 
-	-- ปุ่มแท็บ (ทุกปุ่มมีขอบเขียว)
-	local function mkTab(txt)
-		local b=Instance.new("TextButton",tabs); b.Text=txt; b.Size=UDim2.fromOffset(120,36); b.BackgroundColor3=Color3.fromRGB(20,22,26)
-		b.Font=Enum.Font.GothamSemibold; b.TextSize=14; b.TextColor3=T.TXT; Instance.new("UICorner",b).CornerRadius=UDim.new(0,10); local s=Instance.new("UIStroke",b); s.Color=T.GREEN; s.Thickness=2
-		b.MouseEnter:Connect(function() b.BackgroundColor3=Color3.fromRGB(28,32,38) end)
-		b.MouseLeave:Connect(function() b.BackgroundColor3=Color3.fromRGB(20,22,26) end)
-		return b
+	-- สร้างแท็บ
+	local current
+	local function switchTo(name)
+		if current==name then return end
+		current=name
+		-- (พื้นที่สำหรับใส่ฟังก์ชันจริงภายหลัง) ตอนนี้โชว์หัวข้อเพียว ๆ
+		for _,c in ipairs(left:GetChildren()) do if c:IsA("GuiObject") then c:Destroy() end end
+		for _,c in ipairs(right:GetChildren()) do if c:IsA("GuiObject") then c:Destroy() end end
+
+		local lblL = Instance.new("TextLabel", left); lblL.BackgroundTransparency=1; lblL.TextColor3=GREEN; lblL.Font=Enum.Font.GothamBold; lblL.TextSize=16
+		lblL.Position=UDim2.fromOffset(12,10); lblL.Text = "• "..name.." (ซ้าย)"
+
+		local lblR = Instance.new("TextLabel", right); lblR.BackgroundTransparency=1; lblR.TextColor3=GREEN; lblR.Font=Enum.Font.GothamBold; lblR.TextSize=16
+		lblR.Position=UDim2.fromOffset(12,10); lblR.Text = "• "..name.." (ขวา)"
 	end
-	mkTab("หน้าหลัก"); mkTab("ผู้เล่น"); mkTab("ภาพ/แสง"); mkTab("เทเลพอร์ต"); mkTab("ตั้งค่า"); mkTab("เครดิต")
 
-	-- Toggle show/hide (อนิเมชันลื่น)
-	local lastPos
-	local function show() win.Visible=true; if lastPos then win.Position=lastPos end end
-	local function hide() lastPos=win.Position; win.Visible=false end
-	toggle.MouseButton1Click:Connect(function() if win.Visible then hide() else show() end end)
+	local function makeTab(name)
+		local b=Instance.new("TextButton", tabs); b.Text=name; b.TextSize=16; b.Font=Enum.Font.GothamSemibold; b.TextColor3=TXT
+		b.BackgroundColor3=SOFT; b.Size=UDim2.fromOffset(122,44); round(b,10); stroke(b,WHITE,1)
+		b.MouseButton1Click:Connect(function()
+			for _,bb in ipairs(tabs:GetChildren()) do if bb:IsA("TextButton") then bb.TextColor3=TXT end end
+			b.TextColor3=GREEN; switchTo(name)
+		end)
+	end
 
-	-- Drag โดยจับที่หัว
-	smoothDrag(header,win)
+	for _,n in ipairs(tabNames) do makeTab(n) end
+	switchTo("หน้าหลัก")
+
+	-- show/hide smooth
+	local function showWin()
+		win.Visible=true
+		TweenService:Create(win, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency=0}):Play()
+	end
+	local function hideWin()
+		TweenService:Create(win, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency=0.1}):Play()
+		task.wait(0.16); win.Visible=false
+	end
+	toggleBtn.MouseButton1Click:Connect(function()
+		if win.Visible then hideWin() else showWin() end
+	end)
+	close.MouseButton1Click:Connect(function() hideWin() end)
+
 	return gui
 end
 
-_G.__UFOX_FULL_API.showMainUI = showMainUI
-
--- Flow: Key -> Splash -> UI
-local function boot()
-	_G.__UFOX_FULL_API.showKeyUI(function()
-		_G.__UFOX_FULL_API.showSplash(function()
-			_G.__UFOX_FULL_API.showMainUI()
+------------------------ BOOT FLOW -----------------------
+local function start()
+	showKeyUI(function(kind)
+		showSplash(function()
+			buildMainUI()
+			pcall(function() StarterGui:SetCore("SendNotification",{Title="UFO HUB X",Text="พร้อมใช้งาน ("..kind..")",Duration=4}) end)
 		end)
 	end)
 end
 
-boot()
+start()
