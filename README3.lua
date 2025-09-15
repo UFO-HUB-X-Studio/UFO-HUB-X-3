@@ -1,204 +1,310 @@
---========================================================
--- UFO HUB X — KEY MODULE (ต้องใส่คีย์ก่อนถึงจะไป Splash/UI)
--- เพิ่มคีย์พิเศษ: JJJMAX (เฉพาะรอบนี้) และ PanuphongArtphairin (ถาวร)
--- คีย์ปกติ 24 ชม. (เหมือนเดิม 100 ตัว) + UI สวยแบบใหม่
--- API: isValid(), prompt(opts), grantIfValid(key)
---========================================================
-local ENV = (getgenv and getgenv()) or _G
-ENV.__UFOX_KEY = ENV.__UFOX_KEY or { ok=false, kind=nil, exp=0 } -- kind: "session"|"perma"|"timer"
+-- UFO HUB X • Pack (Part 1/3)
+if _G.__UFOX_PACKED then return end
+_G.__UFOX_PACKED = true
 
--- ====== รายการคีย์ 100 ตัว (เหมือนที่ให้มาก่อนหน้า) ======
--- ใส่ครบ 100 ตัว “ตามเดิม” ตรงนี้เลย (คงเดิมจากครั้งก่อน)
+-- Services
+local Players      = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UIS          = game:GetService("UserInputService")
+local HttpService  = game:GetService("HttpService")
+local StarterGui   = game:GetService("StarterGui")
+local lp           = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local pg           = lp:WaitForChild("PlayerGui")
+
+-- Theme
+local GREEN   = Color3.fromRGB(22,247,123)
+local GREEN2  = Color3.fromRGB(120,255,195)
+local WHITE   = Color3.fromRGB(255,255,255)
+local BLACK   = Color3.fromRGB(0,0,0)
+local CARD_BG = Color3.fromRGB(18,20,24)
+local INPUTBG = Color3.fromRGB(32,36,42)
+local TXT     = Color3.fromRGB(235,240,245)
+local TXT2    = Color3.fromRGB(170,180,190)
+local RED     = Color3.fromRGB(235,70,85)
+local LOGO_ID = "rbxassetid://106029438403666"
+
+-- Helpers
+local function notify(msg)
+	pcall(function()
+		StarterGui:SetCore("SendNotification",{Title="UFO HUB X",Text=msg,Duration=5})
+	end)
+end
+local function center(gui)
+	gui.AnchorPoint=Vector2.new(0.5,0.5); gui.Position=UDim2.fromScale(0.5,0.5)
+end
+local function smoothDrag(handle, frame)
+	local drag, startPos, startInput
+	handle.InputBegan:Connect(function(i)
+		if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+			drag=true; startInput=i; startPos=frame.Position
+		end
+	end)
+	handle.InputEnded:Connect(function(i) if i==startInput then drag=false end end)
+	UIS.InputChanged:Connect(function(i)
+		if drag and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+			local d=i.Position-startInput.Position
+			frame.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+d.X,startPos.Y.Scale,startPos.Y.Offset+d.Y)
+		end
+	end)
+end
+
+-- Storage (executor-friendly)
+local PATH="UFOX_KEY_STORE.json"
+local haveFS = (writefile and isfile and readfile) and true or false
+local function readStore()
+	if haveFS and isfile(PATH) then
+		local ok,res=pcall(function() return HttpService:JSONDecode(readfile(PATH)) end)
+		if ok and type(res)=="table" then return res end
+	end
+	_G.__UFOX_MEM = _G.__UFOX_MEM or {}
+	return _G.__UFOX_MEM
+end
+local function writeStore(t)
+	if haveFS then
+		pcall(function() writefile(PATH, HttpService:JSONEncode(t)) end)
+	else
+		_G.__UFOX_MEM=t
+	end
+end
+
+-- Keys (100 ปกติ + 2 พิเศษ)
 local NORMAL_KEYS = {
-  "UFOHUBXDMF9YK0XZM24h","UFOHUBX70OJIR4IF124h","UFOHUBX59XO3283ZB24h",
-  "UFOHUBX0G86MNVDJX24h","UFOHUBX4Z80TW9L5H24h","UFOHUBX7RXW8H0JX224h",
-  "UFOHUBX66CXRW8Q6P24h","UFOHUBX8G8K2S2QO624h","UFOHUBXWZQJX4BC1V24h",
-  "UFOHUBX9W6A1GZ0MZ24h","UFOHUBXK8B3O3NGOB24h","UFOHUBX8N3O2R3V8K24h",
-  "UFOHUBX8N9VQ8Z6Q324h","UFOHUBX3UCFY0X5VH24h","UFOHUBX4XHZC7Y2J124h",
-  "UFOHUBX6H5H2M8H1B24h","UFOHUBX6N2MBXJ0ZP24h","UFOHUBXQ3D4XK3W7C24h",
-  "UFOHUBX9Y0Z6R3V1W24h","UFOHUBX0G2L0Q8P0A24h","UFOHUBX2T2M4X0P1P24h",
-  "UFOHUBX2QFQ5H2QK724h","UFOHUBX7H4M9H3M6I24h","UFOHUBX0C3W2J8O2U24h",
-  "UFOHUBX1Z0V2J8L5W24h","UFOHUBX7G8G7S8D7Z24h","UFOHUBX9A5K6B4W0P24h",
-  "UFOHUBX2C6C7S4T6J24h","UFOHUBXT9E4L7W1Z824h","UFOHUBX2X9V4I8Y4N24h",
-  "UFOHUBX2F2Z2M5S5D24h","UFOHUBX1D3H7N9T2K24h","UFOHUBX8W4B8M2A1P24h",
-  "UFOHUBX3V8Q5M7K2C24h","UFOHUBX7Q2I5G3W0Z24h","UFOHUBX4N0E0N4L0P24h",
-  "UFOHUBX0G8N7L7C3V24h","UFOHUBX5Q1J7M6Z4A24h","UFOHUBXC5I0H9U3S824h",
-  "UFOHUBX0J4Q1E4T4E24h","UFOHUBX5C1E1J0B3O24h","UFOHUBX7T6M5N4V1S24h",
-  "UFOHUBX4I9A0V0E4Z24h","UFOHUBX1Z8N4R2Q0K24h","UFOHUBX3Y5K1H2Q3J24h",
-  "UFOHUBX5J7C2G1P8M24h","UFOHUBX1R0I7Z8S0V24h","UFOHUBX6G2K5N8L3D24h",
-  "UFOHUBX2N1Z5M4C7B24h","UFOHUBX3W6Q4E9J1N24h","UFOHUBX4Q2M6H1C9X24h",
-  "UFOHUBX7P4V2L9T0I24h","UFOHUBX8M0D1Q3W7E24h","UFOHUBX9L5S2A4K6Z24h",
-  "UFOHUBX0K1P3O5I7U24h","UFOHUBX4U3I5Y7T9R24h","UFOHUBX2M4N6B8V0C24h",
-  "UFOHUBX6B7V9C1X3Z24h","UFOHUBX8V1C3X5Z7B24h","UFOHUBX0C2X4Z6B8N24h",
-  "UFOHUBX3Z5B7N9M1V24h","UFOHUBX5B8N0M2V4C24h","UFOHUBX7N2M4V6C8X24h",
-  "UFOHUBX9M4V6C8X0Z24h","UFOHUBX1V3C5X7Z9B24h","UFOHUBX2C4X6Z8B0N24h",
-  "UFOHUBX3X6Z8B0N2M24h","UFOHUBX4Z7B9N1M3V24h","UFOHUBX5N9M1V3C5X24h",
-  "UFOHUBX6M1V3C5X7Z24h","UFOHUBX7V3C5X7Z9B24h","UFOHUBX8C5X7Z9B1N24h",
-  "UFOHUBX9X7Z9B1N3M24h","UFOHUBX0Z9B1N3M5V24h","UFOHUBX1B1N3M5V7C24h",
-  "UFOHUBX2N3M5V7C9X24h","UFOHUBX3M5V7C9X1Z24h","UFOHUBX4V7C9X1Z3B24h",
-  "UFOHUBX5C9X1Z3B5N24h","UFOHUBX6X1Z3B5N7M24h","UFOHUBX7Z3B5N7M9V24h",
-  "UFOHUBX8B5N7M9V1C24h","UFOHUBX9N7M9V1C3X24h","UFOHUBX0M9V1C3X5Z24h",
-  "UFOHUBX1V1C3X5Z7B24h","UFOHUBX2C3X5Z7B9N24h","UFOHUBX3X5Z7B9N1M24h",
-  "UFOHUBX4Z7B9N1M3V24h","UFOHUBX5B9N1M3V5C24h","UFOHUBX6N1M3V5C7X24h",
-  "UFOHUBX7M3V5C7X9Z24h","UFOHUBX8V5C7X9Z1B24h","UFOHUBX9C7X9Z1B3N24h",
-  "UFOHUBX0X9Z1B3N5M24h","UFOHUBX1Z1B3N5M7V24h","UFOHUBX2B3N5M7V9C24h",
-  "UFOHUBX3N5M7V9C1X24h","UFOHUBX4M7V9C1X3Z24h","UFOHUBX5V9C1X3Z5B24h",
-  "UFOHUBX6C1X3Z5B7N24h","UFOHUBX7X3Z5B7N9M24h","UFOHUBX8Z5B7N9M1V24h",
-  "UFOHUBX9B7N9M1V3C24h","UFOHUBX0N9M1V3C5X24h","UFOHUBX1M1V3C5X7Z24h",
-  "UFOHUBX2V3C5X7Z9B24h","UFOHUBX3C5X7Z9B1N24h","UFOHUBX4X7Z9B1N3M24h",
-  "UFOHUBX5Z9B1N3M5V24h","UFOHUBX6B1N3M5V7C24h","UFOHUBX7N3M5V7C9X24h",
-  "UFOHUBX8M5V7C9X1Z24h","UFOHUBX9V7C9X1Z3B24h","UFOHUBX1H049FTRA024h",
-  "UFOHUBX7GB158W98N24h","UFOHUBXLQ7T871OFY24h","UFOHUBXZPPK52HC8G24h",
-  "UFOHUBXBO6IC0I7MM24h",
+"UFOHUBXDMF9YK0XZM24h","UFOHUBX70OJIR4IF124h","UFOHUBX59XO3283ZB24h","UFOHUBX0G86MNVDJX24h",
+"UFOHUBX4Z80TW9L5H24h","UFOHUBX7RXW8H0JX224h","UFOHUBX66CXRW8Q6P24h","UFOHUBX8G8K2S2QO624h",
+"UFOHUBXWZQJX4BC1V24h","UFOHUBX9W6A1GZ0MZ24h","UFOHUBXK8B3O3NGOB24h","UFOHUBX8N3O2R3V8K24h",
+"UFOHUBX8N9VQ8Z6Q324h","UFOHUBX3UCFY0X5VH24h","UFOHUBX4XHZC7Y2J124h","UFOHUBX6H5H2M8H1B24h",
+"UFOHUBX6N2MBXJ0ZP24h","UFOHUBXQ3D4XK3W7C24h","UFOHUBX9Y0Z6R3V1W24h","UFOHUBX0G2L0Q8P0A24h",
+"UFOHUBX2T2M4X0P1P24h","UFOHUBX2QFQ5H2QK724h","UFOHUBX7H4M9H3M6I24h","UFOHUBX0C3W2J8O2U24h",
+"UFOHUBX1Z0V2J8L5W24h","UFOHUBX7G8G7S8D7Z24h","UFOHUBX9A5K6B4W0P24h","UFOHUBX2C6C7S4T6J24h",
+"UFOHUBXT9E4L7W1Z824h","UFOHUBX2X9V4I8Y4N24h","UFOHUBX2F2Z2M5S5D24h","UFOHUBX1D3H7N9T2K24h",
+"UFOHUBX8W4B8M2A1P24h","UFOHUBX3V8Q5M7K2C24h","UFOHUBX7Q2I5G3W0Z24h","UFOHUBX4N0E0N4L0P24h",
+"UFOHUBX0G8N7L7C3V24h","UFOHUBX5Q1J7M6Z4A24h","UFOHUBXC5I0H9U3S824h","UFOHUBX0J4Q1E4T4E24h",
+"UFOHUBX5C1E1J0B3O24h","UFOHUBX7T6M5N4V1S24h","UFOHUBX4I9A0V0E4Z24h","UFOHUBX1Z8N4R2Q0K24h",
+"UFOHUBX3Y5K1H2Q3J24h","UFOHUBX5J7C2G1P8M24h","UFOHUBX1R0I7Z8S0V24h","UFOHUBX6G2K5N8L3D24h",
+"UFOHUBX2N1Z5M4C7B24h","UFOHUBX3W6Q4E9J1N24h","UFOHUBX4Q2M6H1C9X24h","UFOHUBX7P4V2L9T0I24h",
+"UFOHUBX8M0D1Q3W7E24h","UFOHUBX9L5S2A4K6Z24h","UFOHUBX0K1P3O5I7U24h","UFOHUBX4U3I5Y7T9R24h",
+"UFOHUBX2M4N6B8V0C24h","UFOHUBX6B7V9C1X3Z24h","UFOHUBX8V1C3X5Z7B24h","UFOHUBX0C2X4Z6B8N24h",
+"UFOHUBX3Z5B7N9M1V24h","UFOHUBX5B8N0M2V4C24h","UFOHUBX7N2M4V6C8X24h","UFOHUBX9M4V6C8X0Z24h",
+"UFOHUBX1V3C5X7Z9B24h","UFOHUBX2C4X6Z8B0N24h","UFOHUBX3X6Z8B0N2M24h","UFOHUBX4Z7B9N1M3V24h",
+"UFOHUBX5N9M1V3C5X24h","UFOHUBX6M1V3C5X7Z24h","UFOHUBX7V3C5X7Z9B24h","UFOHUBX8C5X7Z9B1N24h",
+"UFOHUBX9X7Z9B1N3M24h","UFOHUBX0Z9B1N3M5V24h","UFOHUBX1B1N3M5V7C24h","UFOHUBX2N3M5V7C9X24h",
+"UFOHUBX3M5V7C9X1Z24h","UFOHUBX4V7C9X1Z3B24h","UFOHUBX5C9X1Z3B5N24h","UFOHUBX6X1Z3B5N7M24h",
+"UFOHUBX7Z3B5N7M9V24h","UFOHUBX8B5N7M9V1C24h","UFOHUBX9N7M9V1C3X24h","UFOHUBX0M9V1C3X5Z24h",
+"UFOHUBX1V1C3X5Z7B24h","UFOHUBX2C3X5Z7B9N24h","UFOHUBX3X5Z7B9N1M24h","UFOHUBX4Z7B9N1M3V24h",
+"UFOHUBX5B9N1M3V5C24h","UFOHUBX6N1M3V5C7X24h","UFOHUBX7M3V5C7X9Z24h","UFOHUBX8V5C7X9Z1B24h",
+"UFOHUBX9C7X9Z1B3N24h","UFOHUBX0X9Z1B3N5M24h","UFOHUBX1Z1B3N5M7V24h","UFOHUBX2B3N5M7V9C24h",
+"UFOHUBX3N5M7V9C1X24h","UFOHUBX4M7V9C1X3Z24h","UFOHUBX5V9C1X3Z5B24h","UFOHUBX6C1X3Z5B7N24h",
+"UFOHUBX7X3Z5B7N9M24h","UFOHUBX8Z5B7N9M1V24h","UFOHUBX9B7N9M1V3C24h","UFOHUBX0N9M1V3C5X24h",
+"UFOHUBX1M1V3C5X7Z24h","UFOHUBX2V3C5X7Z9B24h","UFOHUBX3C5X7Z9B1N24h","UFOHUBX4X7Z9B1N3M24h",
+"UFOHUBX5Z9B1N3M5V24h","UFOHUBX6B1N3M5V7C24h","UFOHUBX7N3M5V7C9X24h","UFOHUBX8M5V7C9X1Z24h",
+"UFOHUBX9V7C9X1Z3B24h","UFOHUBX1H049FTRA024h","UFOHUBX7GB158W98N24h","UFOHUBXLQ7T871OFY24h",
+"UFOHUBXZPPK52HC8G24h","UFOHUBXBO6IC0I7MM24h"
 }
+local NORMAL_SET={} for _,k in ipairs(NORMAL_KEYS) do NORMAL_SET[k]=true end
 
--- ====== คีย์พิเศษ ======
-local SPECIAL_SESSION = "JJJMAX"              -- เฉพาะรอบนี้ (session)
-local SPECIAL_PERMA   = "PanuphongArtphairin" -- ถาวร
-
--- ====== Utils ======
-local function now() return os.time() end
-local function listHas(t, x) for i=1,#t do if t[i]==x then return true end end return false end
-
-local function isValid()
-  if not ENV.__UFOX_KEY.ok then return false end
-  if ENV.__UFOX_KEY.kind == "perma"  then return true end
-  if ENV.__UFOX_KEY.kind == "session" then return true end
-  if ENV.__UFOX_KEY.kind == "timer"   then return (ENV.__UFOX_KEY.exp or 0) > now() end
-  return false
+local function validateKey(inputKey)
+	local s=readStore()
+	if s.perm==true then return true,"PERM" end
+	if s.session_ok==true then return true,"SESSION" end
+	if s.expire and os.time()<s.expire then return true,"24H" end
+	if inputKey=="PanuphongArtphairin" then s.perm=true; s.expire=nil; s.session_ok=nil; writeStore(s); return true,"PERM" end
+	if inputKey=="JJJMAX" then s.session_ok=true; s.expire=nil; writeStore(s); return true,"SESSION" end
+	if NORMAL_SET[inputKey] then s.expire=os.time()+24*60*60; s.session_ok=nil; writeStore(s); return true,"24H" end
+	return false
 end
 
-local function grant(kind, dur)
-  ENV.__UFOX_KEY.ok   = true
-  ENV.__UFOX_KEY.kind = kind   -- "session" | "perma" | "timer"
-  ENV.__UFOX_KEY.exp  = kind=="timer" and (now() + (dur or 24*60*60)) or math.huge
+-- Key UI (ตามสเปค: ไม่มี Welcome/Paste, กรอบเขียว, X โฮเวอร์แดง)
+local function showKeyUI(onOK)
+	local screen=Instance.new("ScreenGui",pg); screen.Name="UFOX_KEY_UI"; screen.IgnoreGuiInset=true; screen.DisplayOrder=2500
+	local dim=Instance.new("Frame",screen); dim.Size=UDim2.fromScale(1,1); dim.BackgroundColor3=BLACK; dim.BackgroundTransparency=0.3
+	local card=Instance.new("Frame",screen); card.Size=UDim2.fromOffset(680,360); center(card); card.BackgroundColor3=CARD_BG
+	Instance.new("UICorner",card).CornerRadius=UDim.new(0,16); local st=Instance.new("UIStroke",card); st.Color=GREEN; st.Thickness=2; st.Transparency=0.25
+	local header=Instance.new("Frame",card); header.Size=UDim2.new(1,-24,0,56); header.Position=UDim2.fromOffset(12,12); header.BackgroundTransparency=1
+	local logo=Instance.new("ImageLabel",header); logo.Image=LOGO_ID; logo.BackgroundTransparency=1; logo.Size=UDim2.fromOffset(34,34); logo.Position=UDim2.fromOffset(4,11)
+	local head=Instance.new("TextLabel",header); head.BackgroundTransparency=1; head.Font=Enum.Font.GothamBold; head.TextSize=18; head.TextXAlignment=Enum.TextXAlignment.Left
+	head.TextColor3=TXT; head.Position=UDim2.fromOffset(46,8); head.Size=UDim2.new(1,-120,1,-8); head.RichText=true
+	head.Text='<font color="#16F77B">KEY SYSTEM</font> · เข้าสคริปต์ต้องมีคีย์ (อายุ 24 ชม.)'
+	local close=Instance.new("TextButton",header); close.Text="✕"; close.Font=Enum.Font.GothamBold; close.TextSize=20; close.TextColor3=TXT
+	close.Size=UDim2.fromOffset(40,40); close.Position=UDim2.new(1,-44,0,8); close.BackgroundColor3=Color3.fromRGB(38,42,48); close.AutoButtonColor=false
+	Instance.new("UICorner",close).CornerRadius=UDim.new(0,10); local cb=Instance.new("UIStroke",close); cb.Color=WHITE; cb.Transparency=0.25
+	close.MouseEnter:Connect(function() close.BackgroundColor3=RED; close.TextColor3=WHITE end)
+	close.MouseLeave:Connect(function() close.BackgroundColor3=Color3.fromRGB(38,42,48); close.TextColor3=TXT end)
+	close.MouseButton1Click:Connect(function() screen:Destroy() end)
+	local sep=Instance.new("Frame",card); sep.Position=UDim2.fromOffset(12,66); sep.Size=UDim2.new(1,-24,0,1); sep.BackgroundColor3=Color3.fromRGB(70,78,88); sep.BackgroundTransparency=0.25
+	local input=Instance.new("TextBox",card); input.PlaceholderText="insert your key here"; input.Text=""; input.TextColor3=TXT; input.PlaceholderColor3=TXT2
+	input.BackgroundColor3=INPUTBG; input.ClearTextOnFocus=false; input.Font=Enum.Font.Gotham; input.TextSize=16; input.Size=UDim2.new(1,-40,0,44); input.Position=UDim2.fromOffset(20,96)
+	Instance.new("UICorner",input).CornerRadius=UDim.new(0,12); local inSt=Instance.new("UIStroke",input); inSt.Color=GREEN; inSt.Thickness=2; inSt.Transparency=0.25
+	local submit=Instance.new("TextButton",card); submit.Text="Submit Key  ➜"; submit.Font=Enum.Font.GothamBlack; submit.TextSize=18; submit.TextColor3=Color3.fromRGB(25,32,28)
+	submit.BackgroundColor3=GREEN; submit.AutoButtonColor=false; submit.BorderSizePixel=0; submit.Size=UDim2.new(1,-40,0,48); submit.Position=UDim2.fromOffset(20,160)
+	Instance.new("UICorner",submit).CornerRadius=UDim.new(0,12); local sb=Instance.new("UIStroke",submit); sb.Color=GREEN2; sb.Transparency=0.3
+	submit.MouseEnter:Connect(function() TweenService:Create(submit,TweenInfo.new(0.1),{BackgroundColor3=GREEN2}):Play() end)
+	submit.MouseLeave:Connect(function() TweenService:Create(submit,TweenInfo.new(0.1),{BackgroundColor3=GREEN}):Play() end)
+	local row=Instance.new("Frame",card); row.Size=UDim2.new(1,-40,0,56); row.Position=UDim2.new(0,20,1,-72); row.BackgroundTransparency=1
+	local list=Instance.new("UIListLayout",row); list.FillDirection=Enum.FillDirection.Horizontal; list.HorizontalAlignment=Enum.HorizontalAlignment.Center; list.Padding=UDim.new(0,18)
+	local function mkBigBtn(icon,label)
+		local b=Instance.new("TextButton"); b.AutoButtonColor=false; b.BackgroundColor3=Color3.fromRGB(30,34,40); b.Size=UDim2.fromOffset(220,50)
+		b.Text=icon.."  "..label; b.Font=Enum.Font.GothamSemibold; b.TextSize=17; b.TextColor3=TXT; Instance.new("UICorner",b).CornerRadius=UDim.new(0,14)
+		local st=Instance.new("UIStroke",b); st.Color=GREEN; st.Thickness=2; st.Transparency=0.25
+		b.MouseEnter:Connect(function() TweenService:Create(b,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(36,40,48)}):Play() end)
+		b.MouseLeave:Connect(function() TweenService:Create(b,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(30,34,40)}):Play() end)
+		b.Parent=row; return b
+	end
+	local getKey=mkBigBtn("🔑","Get Key"); local disc=mkBigBtn("💬","Discord")
+	local GET_URL="https://linkunlocker.com/ufo-hub-x-wKfUt"; local DISC_URL="https://discord.gg/JFHuVVVQ6D"
+	local function open(url) if setclipboard then setclipboard(url) end; notify("คัดลอกลิงก์แล้ว: "..url) end
+	getKey.MouseButton1Click:Connect(function() open(GET_URL) end)
+	disc.MouseButton1Click:Connect(function() open(DISC_URL) end)
+
+	local okAlready=validateKey(nil)
+	if okAlready then
+		TweenService:Create(card,TweenInfo.new(0.2),{BackgroundTransparency=1}):Play()
+		TweenService:Create(dim,TweenInfo.new(0.2),{BackgroundTransparency=1}):Play()
+		task.delay(0.21,function() screen:Destroy(); if onOK then onOK() end end)
+		return
+	end
+
+	submit.MouseButton1Click:Connect(function()
+		local ok=validateKey(input.Text)
+		if ok then
+			TweenService:Create(card,TweenInfo.new(0.2),{BackgroundTransparency=1}):Play()
+			TweenService:Create(dim,TweenInfo.new(0.2),{BackgroundTransparency=1}):Play()
+			task.delay(0.21,function() screen:Destroy(); if onOK then onOK() end end)
+		else
+			input.Text=""; input.PlaceholderText="คีย์ไม่ถูกต้อง ลองใหม่"
+			TweenService:Create(inSt,TweenInfo.new(0.12),{Color=RED}):Play()
+			task.delay(0.25,function() TweenService:Create(inSt,TweenInfo.new(0.18),{Color=GREEN}):Play() end)
+		end
+	end)
 end
 
-local function grantIfValid(key, dur)
-  if type(key)~="string" or key=="" then return false end
-  if key == SPECIAL_SESSION     then grant("session") return true end
-  if key == SPECIAL_PERMA       then grant("perma")   return true end
-  if listHas(NORMAL_KEYS, key)  then grant("timer", dur) return true end
-  return false
+_G.__UFOX_PACK = { showKeyUI = showKeyUI, smoothDrag = smoothDrag, theme = {GREEN=GREEN,WHITE=WHITE,LOGO_ID=LOGO_ID,TXT=TXT} }
+-- UFO HUB X • Pack (Part 2/3)
+
+local Players      = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UIS          = game:GetService("UserInputService")
+local lp           = Players.LocalPlayer
+local pg           = lp:WaitForChild("PlayerGui")
+
+local T = _G.__UFOX_PACK.theme
+local smoothDrag = _G.__UFOX_PACK.smoothDrag
+
+-- Splash / Download
+local function showSplash(onDone)
+	local screen=Instance.new("ScreenGui",pg); screen.Name="UFOX_SPLASH"; screen.IgnoreGuiInset=true; screen.DisplayOrder=2600
+	local bg=Instance.new("Frame",screen); bg.Size=UDim2.fromScale(1,1); bg.BackgroundColor3=Color3.new(0,0,0)
+	local card=Instance.new("Frame",screen); card.Size=UDim2.fromOffset(560,300); card.AnchorPoint=Vector2.new(0.5,0.5); card.Position=UDim2.fromScale(0.5,0.5)
+	card.BackgroundColor3=Color3.fromRGB(18,20,24); card.BorderSizePixel=0; Instance.new("UICorner",card).CornerRadius=UDim.new(0,18)
+	local cs=Instance.new("UIStroke",card); cs.Color=T.GREEN; cs.Thickness=2; cs.Transparency=0.25
+	local logo=Instance.new("ImageLabel",card); logo.BackgroundTransparency=1; logo.Image=T.LOGO_ID; logo.Size=UDim2.fromOffset(96,96); logo.Position=UDim2.new(0.5,0,0,14); logo.AnchorPoint=Vector2.new(0.5,0)
+	local title=Instance.new("TextLabel",card); title.BackgroundTransparency=1; title.Size=UDim2.new(1,0,0,42); title.Position=UDim2.new(0,0,0,120)
+	title.Font=Enum.Font.GothamBold; title.TextSize=30; title.TextXAlignment=Enum.TextXAlignment.Center; title.RichText=true
+	title.Text='<font color="#16F77B">UFO</font> <font color="#FFFFFF">HUB X</font>'; title.TextColor3=T.WHITE
+	local barBG=Instance.new("Frame",card); barBG.Size=UDim2.new(1,-80,0,30); barBG.Position=UDim2.new(0.5,0,0,175); barBG.AnchorPoint=Vector2.new(0.5,0)
+	barBG.BackgroundColor3=Color3.fromRGB(50,50,50); barBG.BorderSizePixel=0; Instance.new("UICorner",barBG).CornerRadius=UDim.new(0,12)
+	local barStroke=Instance.new("UIStroke",barBG); barStroke.Color=T.WHITE; barStroke.Thickness=2; barStroke.Transparency=0.15
+	local fill=Instance.new("Frame",barBG); fill.Size=UDim2.new(0,0,1,0); fill.BackgroundColor3=T.GREEN; fill.BorderSizePixel=0; Instance.new("UICorner",fill).CornerRadius=UDim.new(0,12)
+	local rocket=Instance.new("TextLabel",barBG); rocket.BackgroundTransparency=1; rocket.Size=UDim2.fromOffset(28,28); rocket.AnchorPoint=Vector2.new(0.5,0.5); rocket.Text="🚀"; rocket.TextSize=22
+	local pct=Instance.new("TextLabel",card); pct.BackgroundTransparency=1; pct.Size=UDim2.new(1,0,0,40); pct.Position=UDim2.new(0,0,0,215)
+	pct.Font=Enum.Font.GothamBold; pct.TextSize=32; pct.TextColor3=T.WHITE; pct.TextXAlignment=Enum.TextXAlignment.Center; pct.Text="0%"
+
+	-- Intro pop
+	card.Size=UDim2.fromOffset(560*0.92,300*0.92); card.BackgroundTransparency=0.2
+	TweenService:Create(card,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Size=UDim2.fromOffset(560,300),BackgroundTransparency=0}):Play()
+
+	local TOTAL=10; local LEAD=10; local start=tick()
+	local function setp(p)
+		p=math.clamp(p,0,1)
+		fill.Size=UDim2.new(p,0,1,0)
+		local w=barBG.AbsoluteSize.X
+		rocket.Position=UDim2.new(0.5, p*w - w/2 + LEAD, 0.5, 0)
+		pct.Text=("%d%%"):format(math.floor(p*100))
+	end
+
+	task.spawn(function()
+		while true do
+			local t=math.clamp((tick()-start)/TOTAL,0,1)
+			local e=1-(1-t)^3
+			setp(e)
+			if t>=1 then break end
+			task.wait()
+		end
+		task.wait(0.3)
+		TweenService:Create(card,TweenInfo.new(0.45),{BackgroundTransparency=1}):Play()
+		TweenService:Create(bg,TweenInfo.new(0.45),{BackgroundTransparency=1}):Play()
+		task.delay(0.46,function() screen:Destroy(); if onDone then onDone() end end)
+	end)
 end
 
--- ====== UI (เหมือนเวอร์ชันสวย) ======
-local function prompt(opts)
-  local dur        = (opts and opts.durationSec) or (24*60*60)
-  local getKeyURL  = (opts and opts.getKeyLink)  or "https://linkunlocker.com/ufo-hub-x-wKfUt"
-  local discordURL = (opts and opts.discordInvite) or "https://discord.gg/JFHuVVVQ6D"
+-- Main UI (ขนาดพอดี กลางจอ + ปุ่มลอยลากได้)
+local function showMain()
+	if _G.__UFOX_MAIN then return end
+	_G.__UFOX_MAIN=true
+	local s=Instance.new("ScreenGui",pg); s.Name="UFOX_UI"; s.IgnoreGuiInset=true; s.DisplayOrder=2700
+	local toggle=Instance.new("ImageButton",s); toggle.Image=T.LOGO_ID; toggle.BackgroundColor3=Color3.fromRGB(26,30,36)
+	toggle.AutoButtonColor=false; toggle.Size=UDim2.fromOffset(72,72); toggle.Position=UDim2.fromOffset(24, (pg.AbsoluteSize.Y/2)-36)
+	Instance.new("UICorner",toggle).CornerRadius=UDim.new(0,18); local tSt=Instance.new("UIStroke",toggle); tSt.Color=T.WHITE; tSt.Transparency=0.3; tSt.Thickness=2
+	smoothDrag(toggle,toggle)
 
-  local plr = game:GetService("Players").LocalPlayer
-  local pg  = plr:WaitForChild("PlayerGui")
+	local win=Instance.new("Frame",s); win.Size=UDim2.fromOffset(860,400); win.AnchorPoint=Vector2.new(0.5,0.5); win.Position=UDim2.fromScale(0.5,0.5)
+	win.BackgroundColor3=Color3.fromRGB(19,22,26); Instance.new("UICorner",win).CornerRadius=UDim.new(0,14)
+	local wSt=Instance.new("UIStroke",win); wSt.Color=T.WHITE; wSt.Transparency=0.25; wSt.Thickness=2
 
-  local gui = Instance.new("ScreenGui")
-  gui.Name="UFOX_KEY_UI"; gui.IgnoreGuiInset=true; gui.ResetOnSpawn=false; gui.DisplayOrder=10000
-  gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-  gui.Parent = pg
+	local header=Instance.new("Frame",win); header.Size=UDim2.new(1,0,0,50); header.BackgroundColor3=Color3.fromRGB(24,27,32); header.BorderSizePixel=0
+	Instance.new("UICorner",header).CornerRadius=UDim.new(0,14)
+	local logo=Instance.new("ImageLabel",header); logo.Image=T.LOGO_ID; logo.BackgroundTransparency=1; logo.Size=UDim2.fromOffset(28,28); logo.Position=UDim2.fromOffset(12,11)
+	local title=Instance.new("TextLabel",header); title.BackgroundTransparency=1; title.RichText=true; title.TextXAlignment=Enum.TextXAlignment.Left
+	title.Font=Enum.Font.GothamBold; title.TextSize=20; title.Text='<font color="#16F77B">UFO</font> <font color="#FFFFFF">HUB X</font>'; title.Position=UDim2.fromOffset(48,11); title.Size=UDim2.new(1,-100,0,28)
+	local close=Instance.new("TextButton",header); close.Text="✕"; close.Font=Enum.Font.GothamBold; close.TextSize=18; close.TextColor3=T.TXT or T.WHITE
+	close.AutoButtonColor=false; close.Size=UDim2.fromOffset(34,34); close.Position=UDim2.new(1,-42,0,8); close.BackgroundColor3=Color3.fromRGB(36,40,46)
+	Instance.new("UICorner",close).CornerRadius=UDim.new(0,8)
+	close.MouseEnter:Connect(function() close.BackgroundColor3=Color3.fromRGB(235,70,85); close.TextColor3=WHITE end)
+	close.MouseLeave:Connect(function() close.BackgroundColor3=Color3.fromRGB(36,40,46); close.TextColor3=TXT end)
+	close.MouseButton1Click:Connect(function() win.Visible=false end)
+	smoothDrag(header,win)
 
-  local dim = Instance.new("Frame", gui)
-  dim.BackgroundColor3 = Color3.fromRGB(0,0,0); dim.BackgroundTransparency=0.35
-  dim.Size = UDim2.fromScale(1,1)
+	local tabs=Instance.new("Frame",win); tabs.Size=UDim2.new(1,-20,0,40); tabs.Position=UDim2.fromOffset(10,58); tabs.BackgroundTransparency=1
+	local tl=Instance.new("UIListLayout",tabs); tl.FillDirection=Enum.FillDirection.Horizontal; tl.Padding=UDim.new(0,8); tl.HorizontalAlignment=Enum.HorizontalAlignment.Left
+	local function mkTab(txt)
+		local b=Instance.new("TextButton"); b.Text=txt; b.Font=Enum.Font.GothamSemibold; b.TextSize=14; b.TextColor3=T.TXT or Color3.fromRGB(235,240,245)
+		b.BackgroundColor3=Color3.fromRGB(28,32,38); b.AutoButtonColor=false; b.Size=UDim2.fromOffset(120,36)
+		Instance.new("UICorner",b).CornerRadius=UDim.new(0,10); local st=Instance.new("UIStroke",b); st.Color=T.WHITE; st.Transparency=0.35
+		b.MouseEnter:Connect(function() b.BackgroundColor3=Color3.fromRGB(32,36,42) end)
+		b.MouseLeave:Connect(function() b.BackgroundColor3=Color3.fromRGB(28,32,38) end)
+		b.Parent=tabs; return b
+	end
+	local tHome=mkTab("หน้าหลัก"); local tPlayer=mkTab("ผู้เล่น"); local tVisual=mkTab("ภาพ/แสง"); local tTP=mkTab("เทเลพอร์ต"); local tSet=mkTab("ตั้งค่า"); local tCred=mkTab("เครดิต")
 
-  local card = Instance.new("Frame", gui)
-  card.AnchorPoint=Vector2.new(0.5,0.5); card.Position=UDim2.fromScale(0.5,0.5)
-  card.Size=UDim2.fromOffset(760,460); card.BackgroundColor3=Color3.fromRGB(16,18,20); card.BorderSizePixel=0
-  Instance.new("UICorner",card).CornerRadius=UDim.new(0,18)
-  local stroke=Instance.new("UIStroke",card); stroke.Thickness=2; stroke.Color=Color3.fromRGB(255,255,255); stroke.Transparency=0.8
+	local body=Instance.new("Frame",win); body.Size=UDim2.new(1,-20,1,-110); body.Position=UDim2.fromOffset(10,106); body.BackgroundTransparency=1
+	local colL=Instance.new("Frame",body); colL.Size=UDim2.new(0.5,-6,1,0); colL.BackgroundColor3=Color3.fromRGB(24,27,32); Instance.new("UICorner",colL).CornerRadius=UDim.new(0,10)
+	local colR=Instance.new("Frame",body); colR.Size=UDim2.new(0.5,-6,1,0); colR.Position=UDim2.new(0.5,6,0,0); colR.BackgroundColor3=Color3.fromRGB(24,27,32); Instance.new("UICorner",colR).CornerRadius=UDim.new(0,10)
+	local c1=Instance.new("UIStroke",colL); c1.Color=T.WHITE; c1.Transparency=0.35
+	local c2=Instance.new("UIStroke",colR); c2.Color=T.WHITE; c2.Transparency=0.35
+	local l=Instance.new("TextLabel",colL); l.BackgroundTransparency=1; l.TextColor3=T.GREEN; l.Font=Enum.Font.GothamSemibold; l.TextSize=14; l.TextXAlignment=Enum.TextXAlignment.Left; l.Position=UDim2.fromOffset(10,10); l.Size=UDim2.new(1,-20,0,20); l.Text="• ช่องซ้าย (ใส่ปุ่ม/สไลเดอร์ที่นี่)"
+	local r=Instance.new("TextLabel",colR); r.BackgroundTransparency=1; r.TextColor3=T.GREEN; r.Font=Enum.Font.GothamSemibold; r.TextSize=14; r.TextXAlignment=Enum.TextXAlignment.Left; r.Position=UDim2.fromOffset(10,10); r.Size=UDim2.new(1,-20,0,20); r.Text="• ช่องขวา (ใส่ปุ่ม/สไลเดอร์ที่นี่)"
 
-  local header = Instance.new("Frame",card); header.BackgroundTransparency=1
-  header.Position=UDim2.new(0,14,0,10); header.Size=UDim2.new(1,-28,0,52)
-  local title = Instance.new("TextLabel", header)
-  title.BackgroundTransparency=1; title.Font=Enum.Font.GothamBold; title.TextSize=18; title.TextXAlignment=Enum.TextXAlignment.Left
-  title.Size=UDim2.new(1,-48,1,0); title.TextColor3=Color3.fromRGB(200,210,218); title.RichText=true
-  title.Text='<font color="#16F77B">KEY SYSTEM</font>  •  เข้าถึงสคริปต์ต้องมีคีย์ (อายุ 24 ชม.)'
+	local lastPos
+	local function show() win.Visible=true; if lastPos then win.Position=lastPos end end
+	local function hide() lastPos=win.Position; win.Visible=false end
+	toggle.MouseButton1Click:Connect(function() if win.Visible then hide() else show() end end)
 
-  local close=Instance.new("TextButton",header)
-  close.Size=UDim2.fromOffset(36,36); close.Position=UDim2.new(1,-36,0,8)
-  close.Text="✕"; close.Font=Enum.Font.GothamBold; close.TextSize=20
-  close.BackgroundColor3=Color3.fromRGB(28,30,34); close.TextColor3=Color3.fromRGB(235,242,248)
-  Instance.new("UICorner",close).CornerRadius=UDim.new(0,10)
-  local sx=Instance.new("UIStroke",close); sx.Thickness=1; sx.Color=Color3.fromRGB(255,255,255); sx.Transparency=0.85
-  close.MouseButton1Click:Connect(function() gui:Destroy() end)
-
-  local big=Instance.new("TextLabel",card)
-  big.BackgroundTransparency=1; big.Position=UDim2.new(0,40,0,74); big.Size=UDim2.new(1,-80,0,52)
-  big.Font=Enum.Font.GothamBlack; big.TextSize=32; big.RichText=true; big.TextXAlignment=Enum.TextXAlignment.Left
-  big.Text='Welcome to The,\n<font color="#16F77B">UFO</font> HUB X'
-  big.TextColor3=Color3.fromRGB(235,242,248)
-
-  local keyLbl=Instance.new("TextLabel",card)
-  keyLbl.BackgroundTransparency=1; keyLbl.Position=UDim2.new(0,40,0,148)
-  keyLbl.Size=UDim2.new(0,60,0,22); keyLbl.Font=Enum.Font.GothamSemibold; keyLbl.TextSize=16
-  keyLbl.TextColor3=Color3.fromRGB(185,195,205); keyLbl.Text="Key"
-
-  local field=Instance.new("TextBox",card)
-  field.Position=UDim2.new(0,40,0,176); field.Size=UDim2.new(1,-200,0,46)
-  field.BackgroundColor3=Color3.fromRGB(25,29,33); field.PlaceholderText="insert your key here"
-  field.Text=""; field.TextSize=16; field.Font=Enum.Font.Gotham; field.TextColor3=Color3.fromRGB(230,238,245)
-  field.PlaceholderColor3=Color3.fromRGB(145,155,165)
-  Instance.new("UICorner",field).CornerRadius=UDim.new(0,12)
-  local sf=Instance.new("UIStroke",field); sf.Thickness=1; sf.Color=Color3.fromRGB(255,255,255); sf.Transparency=0.85
-
-  local paste=Instance.new("TextButton",card)
-  paste.Position=UDim2.new(1,-140,0,176); paste.Size=UDim2.new(0,100,0,46)
-  paste.BackgroundColor3=Color3.fromRGB(25,29,33); paste.TextColor3=Color3.fromRGB(230,238,245)
-  paste.Text="Paste"; paste.TextSize=16; paste.Font=Enum.Font.GothamSemibold
-  Instance.new("UICorner",paste).CornerRadius=UDim.new(0,12)
-  local sp=Instance.new("UIStroke",paste); sp.Thickness=1; sp.Color=Color3.fromRGB(255,255,255); sp.Transparency=0.85
-  paste.MouseButton1Click:Connect(function()
-    if getclipboard then local ok,txt=pcall(getclipboard); if ok and type(txt)=="string" then field.Text=txt end end
-  end)
-
-  local submit=Instance.new("TextButton",card)
-  submit.Position=UDim2.new(0,40,0,236); submit.Size=UDim2.new(1,-80,0,52)
-  submit.Text="Submit Key  ▸"; submit.TextSize=18; submit.Font=Enum.Font.GothamBold
-  submit.TextColor3=Color3.fromRGB(0,30,20); submit.BackgroundColor3=Color3.fromRGB(22,247,123)
-  Instance.new("UICorner",submit).CornerRadius=UDim.new(0,14)
-
-  local line=Instance.new("Frame",card)
-  line.Position=UDim2.new(0,40,0,300); line.Size=UDim2.new(1,-80,0,1)
-  line.BackgroundColor3=Color3.fromRGB(255,255,255); line.BackgroundTransparency=0.85
-
-  local row=Instance.new("Frame",card); row.BackgroundTransparency=1
-  row.Position=UDim2.new(0,40,1,-72); row.Size=UDim2.new(1,-80,0,52)
-  local list=Instance.new("UIListLayout",row); list.FillDirection=Enum.FillDirection.Horizontal
-  list.HorizontalAlignment=Enum.HorizontalAlignment.Center; list.Padding=UDim.new(0,28)
-  local function pill(text)
-    local b=Instance.new("TextButton"); b.Size=UDim2.fromOffset(220,48)
-    b.BackgroundColor3=Color3.fromRGB(25,29,33); b.TextColor3=Color3.fromRGB(230,238,245)
-    b.Text=text; b.TextSize=16; b.Font=Enum.Font.GothamSemibold
-    Instance.new("UICorner",b).CornerRadius=UDim.new(0,14)
-    local sb=Instance.new("UIStroke",b); sb.Thickness=1; sb.Color=Color3.fromRGB(255,255,255); sb.Transparency=0.85
-    b.Parent=row; return b
-  end
-  local getKeyBtn=pill("🔓  Get Key"); local discBtn=pill("💬  Discord")
-  getKeyBtn.MouseButton1Click:Connect(function()
-    local url=getKeyURL; if setclipboard then setclipboard(url) end; if syn and syn.open_url then syn.open_url(url) end
-  end)
-  discBtn.MouseButton1Click:Connect(function()
-    local url=discordURL; if setclipboard then setclipboard(url) end; if syn and syn.open_url then syn.open_url(url) end
-  end)
-
-  local foot=Instance.new("TextLabel",card)
-  foot.BackgroundTransparency=1; foot.Position=UDim2.new(0,0,1,-24); foot.Size=UDim2.new(1,0,0,18)
-  foot.Font=Enum.Font.Gotham; foot.TextSize=13; foot.TextColor3=Color3.fromRGB(165,175,185)
-  foot.Text="คีย์ปกติหมดอายุทุก ๆ 24 ชั่วโมง | JJJMAX ใช้ได้เฉพาะรอบนี้ | PanuphongArtphairin ถาวร"
-
-  local function accept()
-    local k = field.Text
-    if grantIfValid(k, dur) then gui:Destroy() return true end
-    submit.Text="Invalid key!  ✕"; submit.BackgroundColor3=Color3.fromRGB(240,78,78)
-    task.delay(1.1,function() submit.Text="Submit Key  ▸"; submit.BackgroundColor3=Color3.fromRGB(22,247,123) end)
-    return false
-  end
-
-  submit.MouseButton1Click:Connect(accept)
-  field.FocusLost:Connect(function(enter) if enter then accept() end end)
+	_G.__UFOX_UI_OBJ = { api = { show = show, hide = hide } }
 end
 
-return {
-  isValid       = isValid,
-  prompt        = prompt,
-  grantIfValid  = grantIfValid,
-}
+_G.__UFOX_PACK.showSplash = showSplash
+_G.__UFOX_PACK.showMain  = showMain
+-- UFO HUB X • Pack (Part 3/3)
+
+local showKeyUI = _G.__UFOX_PACK.showKeyUI
+local showSplash= _G.__UFOX_PACK.showSplash
+local showMain  = _G.__UFOX_PACK.showMain
+
+local function boot()
+	showKeyUI(function()
+		showSplash(function()
+			showMain()
+		end)
+	end)
+end
+
+boot()
